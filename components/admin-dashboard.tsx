@@ -133,9 +133,14 @@ const mockLogs = [
 ]
 
 export function AdminDashboard() {
+  const [mounted, setMounted] = React.useState(false)
   const [activeSection, setActiveSection] = React.useState("database")
   const [selectedTable, setSelectedTable] = React.useState<string | null>(null)
   const [searchTerm, setSearchTerm] = React.useState("")
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const sidebarItems = [
     {
@@ -162,8 +167,19 @@ export function AdminDashboard() {
 
   const filteredTables = mockTables.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
+  if (!mounted) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center">
+        <div className="text-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <div className="flex min-h-screen w-full">
         <Sidebar>
           <SidebarHeader>
@@ -314,7 +330,6 @@ function AddTableDialog() {
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="table-name">Table Name</Label>
@@ -340,7 +355,6 @@ function AddTableDialog() {
             <Textarea id="table-description" placeholder="Enter table description" />
           </div>
 
-          {/* Table Type Specific Content */}
           {tableType === "view" ? (
             <div>
               <Label htmlFor="sql-query">SQL Query</Label>
@@ -620,9 +634,11 @@ function ApiEndpointCard({
   const [copied, setCopied] = React.useState(false)
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
   }
 
   const methodColors = {
@@ -708,12 +724,11 @@ function TableDetailView({
 }: { tableName: string; tableType: string; onBack: () => void }) {
   const [activeTab, setActiveTab] = React.useState("data")
   const tableData = mockTableData[tableName as keyof typeof mockTableData] || []
-  const baseUrl = "https://api.example.com" // This would come from settings
+  const baseUrl = "https://api.example.com"
 
   const generateApiDocs = () => {
     const endpoints = []
 
-    // List records - available for all table types
     endpoints.push({
       method: "GET",
       endpoint: `${baseUrl}/api/v1/${tableName}`,
@@ -739,7 +754,6 @@ function TableDetailView({
       ),
     })
 
-    // Get by ID - available for all table types
     endpoints.push({
       method: "GET",
       endpoint: `${baseUrl}/api/v1/${tableName}/{id}`,
@@ -748,7 +762,6 @@ function TableDetailView({
       example: JSON.stringify(tableData[0] || {}, null, 2),
     })
 
-    // For base and auth tables, add CRUD operations
     if (tableType === "base" || tableType === "auth") {
       endpoints.push({
         method: "POST",
@@ -778,7 +791,6 @@ function TableDetailView({
       })
     }
 
-    // For auth tables, add authentication endpoint
     if (tableType === "auth") {
       endpoints.push({
         method: "POST",
@@ -1048,7 +1060,6 @@ function TableDetailView({
             </CardContent>
           </Card>
 
-          {/* Authentication Settings - only show for auth tables */}
           {tableType === "auth" && (
             <Card>
               <CardHeader>
@@ -1390,7 +1401,7 @@ function SettingsSection() {
                   placeholder="Database connection string"
                 />
                 <Button type="button" variant="outline" onClick={() => setShowConnectionString(!showConnectionString)}>
-                  {showConnectionString ? <Eye className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  <Eye className="h-4 w-4" />
                 </Button>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
