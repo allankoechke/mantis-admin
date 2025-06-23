@@ -1,12 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { Database, Settings, Shield, LogOut } from "lucide-react"
-
-import { Button } from "@/components/ui/button"
+import { Table, Settings, Shield, LogOut, FileText, RefreshCw } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -21,6 +20,9 @@ import { ApiClient, type TableMetadata, type Admin } from "@/lib/api"
 import { DatabaseSection } from "./database/database-section"
 import { AdminsSection } from "./admins/admins-section"
 import { SettingsSection } from "./settings/settings-section"
+import { LogsSection } from "./logs/logs-section"
+import { SyncSection } from "./sync/sync-section"
+import { useToast } from "@/hooks/use-toast"
 
 interface AdminDashboardProps {
   token: string
@@ -29,12 +31,24 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const [mounted, setMounted] = React.useState(false)
-  const [activeSection, setActiveSection] = React.useState("database")
+  const [activeSection, setActiveSection] = React.useState("tables")
   const [tables, setTables] = React.useState<TableMetadata[]>([])
   const [admins, setAdmins] = React.useState<Admin[]>([])
   const [loading, setLoading] = React.useState(true)
+  const { toast } = useToast()
 
-  const apiClient = React.useMemo(() => new ApiClient(token, onLogout), [token, onLogout])
+  const showError = React.useCallback(
+    (error: string, type: "error" | "warning" = "error") => {
+      toast({
+        variant: type === "error" ? "destructive" : "default",
+        title: type === "error" ? "Error" : "Warning",
+        description: error,
+      })
+    },
+    [toast],
+  )
+
+  const apiClient = React.useMemo(() => new ApiClient(token, onLogout, showError), [token, onLogout, showError])
 
   React.useEffect(() => {
     setMounted(true)
@@ -65,14 +79,24 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
 
   const sidebarItems = [
     {
-      title: "Database",
-      icon: Database,
-      id: "database",
+      title: "Tables",
+      icon: Table,
+      id: "tables",
     },
     {
       title: "Admins",
       icon: Shield,
       id: "admins",
+    },
+    {
+      title: "Logs",
+      icon: FileText,
+      id: "logs",
+    },
+    {
+      title: "Sync",
+      icon: RefreshCw,
+      id: "sync",
     },
     {
       title: "Settings",
@@ -97,14 +121,9 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
       <div className="flex min-h-screen w-full">
         <Sidebar>
           <SidebarHeader>
-            <div className="flex items-center justify-between px-4 py-2">
-              <div className="flex items-center gap-2">
-                <Shield className="h-6 w-6" />
-                <span className="font-semibold">Admin Dashboard</span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-              </Button>
+            <div className="flex items-center gap-2 px-4 py-2">
+              <Shield className="h-6 w-6" />
+              <span className="font-semibold">Admin Dashboard</span>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -124,18 +143,21 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
         </Sidebar>
 
         <div className="flex-1">
           <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-6">
             <SidebarTrigger />
-            <div className="flex-1">
-              <h1 className="font-semibold text-lg">
-                {activeSection === "database" && "Database Management"}
-                {activeSection === "admins" && "Admin Management"}
-                {activeSection === "settings" && "Application Settings"}
-              </h1>
-            </div>
           </header>
 
           <main className="flex-1 p-6">
@@ -148,12 +170,14 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
               </div>
             ) : (
               <>
-                {activeSection === "database" && (
+                {activeSection === "tables" && (
                   <DatabaseSection apiClient={apiClient} tables={tables} onTablesUpdate={setTables} />
                 )}
                 {activeSection === "admins" && (
                   <AdminsSection admins={admins} apiClient={apiClient} onAdminsUpdate={setAdmins} />
                 )}
+                {activeSection === "logs" && <LogsSection />}
+                {activeSection === "sync" && <SyncSection />}
                 {activeSection === "settings" && <SettingsSection />}
               </>
             )}

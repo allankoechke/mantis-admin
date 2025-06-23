@@ -3,6 +3,7 @@
 import * as React from "react"
 import { LoginForm } from "@/components/login-form"
 import { AdminDashboard } from "@/components/admin-dashboard"
+import { Toaster } from "@/components/ui/toaster"
 
 export default function Page() {
   const [token, setToken] = React.useState<string | null>(null)
@@ -35,9 +36,10 @@ export default function Page() {
     )
   }
 
-  if (!token) {
-    return <LoginForm onLogin={handleLogin} />
-  }
-
-  return <AdminDashboard token={token} onLogout={handleLogout} />
+  return (
+    <>
+      {!token ? <LoginForm onLogin={handleLogin} /> : <AdminDashboard token={token} onLogout={handleLogout} />}
+      <Toaster />
+    </>
+  )
 }

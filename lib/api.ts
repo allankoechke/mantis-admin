@@ -114,15 +114,28 @@ export interface Admin {
 export class ApiClient {
   private token: string
   private onUnauthorized: () => void
+  private onError?: (error: string, type?: "error" | "warning") => void
 
-  constructor(token: string, onUnauthorized: () => void) {
+  constructor(
+    token: string,
+    onUnauthorized: () => void,
+    onError?: (error: string, type?: "error" | "warning") => void,
+  ) {
     this.token = token
     this.onUnauthorized = onUnauthorized
+    this.onError = onError
   }
 
   private async mockApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     // Simulate network delay
     await delay(300 + Math.random() * 200)
+
+    // Simulate occasional errors for testing
+    if (Math.random() < 0.05) {
+      const error = "Network error occurred"
+      this.onError?.(error, "error")
+      throw new Error(error)
+    }
 
     // Simulate 401 for invalid tokens (uncomment to test)
     // if (Math.random() < 0.1) {
@@ -237,8 +250,9 @@ export class ApiClient {
 
       // For now, use mock API
       return this.mockApiCall<T>(endpoint, options)
-    } catch (error) {
+    } catch (error: any) {
       console.error("API call failed:", error)
+      this.onError?.(error.message, "error")
       throw error
     }
   }

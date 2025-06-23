@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import type { ApiClient, TableMetadata } from "@/lib/api"
 import { AddTableDialog } from "./add-table-dialog"
 import { TableDetailView } from "./table-detail-view"
+import { EditSchemaDialog } from "./edit-schema-dialog"
 
 interface DatabaseSectionProps {
   apiClient: ApiClient
@@ -21,6 +22,7 @@ interface DatabaseSectionProps {
 export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseSectionProps) {
   const [selectedTable, setSelectedTable] = React.useState<string | null>(null)
   const [searchTerm, setSearchTerm] = React.useState("")
+  const [editingTable, setEditingTable] = React.useState<TableMetadata | null>(null)
 
   const filteredTables = tables.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
@@ -32,6 +34,10 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
     } catch (error) {
       console.error("Failed to delete table:", error)
     }
+  }
+
+  const handleTableClick = (tableName: string) => {
+    setSelectedTable(tableName)
   }
 
   if (selectedTable) {
@@ -54,10 +60,6 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Database Tables</h2>
-          <p className="text-muted-foreground">Manage your database tables and data</p>
-        </div>
         <AddTableDialog apiClient={apiClient} onTablesUpdate={onTablesUpdate} />
       </div>
 
@@ -73,7 +75,11 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredTables.map((table) => (
-          <Card key={table.id} className="cursor-pointer hover:shadow-md transition-shadow">
+          <Card
+            key={table.id}
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleTableClick(table.name)}
+          >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 <div className="flex items-center gap-2">
@@ -88,21 +94,37 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
                 </div>
               </CardTitle>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button variant="ghost" size="sm">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setSelectedTable(table.name)}>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedTable(table.name)
+                    }}
+                  >
                     <Eye className="h-4 w-4 mr-2" />
                     View Details
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditingTable(table)
+                    }}
+                  >
                     <Edit className="h-4 w-4 mr-2" />
-                    Edit Structure
+                    Edit Schema
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteTable(table.id)}>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteTable(table.id)
+                    }}
+                  >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete Table
                   </DropdownMenuItem>
@@ -128,6 +150,19 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
           </Card>
         ))}
       </div>
+
+      {editingTable && (
+        <EditSchemaDialog
+          table={editingTable}
+          apiClient={apiClient}
+          onClose={() => setEditingTable(null)}
+          onTableUpdate={(updatedTable) => {
+            const updatedTables = tables.map((t) => (t.id === updatedTable.id ? updatedTable : t))
+            onTablesUpdate(updatedTables)
+            setEditingTable(null)
+          }}
+        />
+      )}
     </div>
   )
 }
