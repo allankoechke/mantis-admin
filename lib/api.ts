@@ -77,6 +77,17 @@ const mockAdmins = [
   },
 ]
 
+const mockSettings = {
+  appName: "Admin Dashboard",
+  baseUrl: "https://api.example.com",
+  version: "1.2.3",
+  maintenanceMode: false,
+  maxFileSize: "10MB",
+  allowRegistration: true,
+  emailVerificationRequired: false,
+  sessionTimeout: 3600,
+}
+
 // Simulate API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -109,6 +120,17 @@ export interface Admin {
   email: string
   created: string
   updated: string
+}
+
+export interface AppSettings {
+  appName: string
+  baseUrl: string
+  version: string
+  maintenanceMode: boolean
+  maxFileSize: string
+  allowRegistration: boolean
+  emailVerificationRequired: boolean
+  sessionTimeout: number
 }
 
 export class ApiClient {
@@ -206,6 +228,17 @@ export class ApiClient {
       if (method === "DELETE" && adminIndex !== -1) {
         mockAdmins.splice(adminIndex, 1)
         return { success: true } as T
+      }
+    }
+
+    if (url.pathname === "/api/v1/settings") {
+      if (method === "GET") {
+        return mockSettings as T
+      }
+      if (method === "PATCH") {
+        const body = JSON.parse(options.body as string)
+        Object.assign(mockSettings, body)
+        return mockSettings as T
       }
     }
 

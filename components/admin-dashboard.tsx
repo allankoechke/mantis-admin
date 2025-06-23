@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { ApiClient, type TableMetadata, type Admin } from "@/lib/api"
+import { ApiClient, type TableMetadata, type Admin, type AppSettings } from "@/lib/api"
 import { DatabaseSection } from "./database/database-section"
 import { AdminsSection } from "./admins/admins-section"
 import { SettingsSection } from "./settings/settings-section"
@@ -36,6 +36,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const [admins, setAdmins] = React.useState<Admin[]>([])
   const [loading, setLoading] = React.useState(true)
   const { toast } = useToast()
+  const [settings, setSettings] = React.useState<AppSettings | null>(null)
 
   const showError = React.useCallback(
     (error: string, type: "error" | "warning" = "error") => {
@@ -58,13 +59,15 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const loadData = async () => {
     try {
       setLoading(true)
-      const [tablesData, adminsData] = await Promise.all([
+      const [tablesData, adminsData, settingsData] = await Promise.all([
         apiClient.call<TableMetadata[]>("/api/v1/tables"),
         apiClient.call<Admin[]>("/api/v1/admins"),
+        apiClient.call<AppSettings>("/api/v1/settings"),
       ])
 
       setTables(tablesData)
       setAdmins(adminsData)
+      setSettings(settingsData)
     } catch (error) {
       console.error("Failed to load data:", error)
     } finally {
@@ -145,6 +148,11 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
           </SidebarContent>
           <SidebarFooter>
             <SidebarMenu>
+              {settings && (
+                <SidebarMenuItem>
+                  <div className="px-4 py-2 text-xs text-muted-foreground">Version {settings.version}</div>
+                </SidebarMenuItem>
+              )}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <a href="https://docs.example.com" target="_blank" rel="noopener noreferrer">
@@ -185,7 +193,9 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
                 )}
                 {activeSection === "logs" && <LogsSection />}
                 {activeSection === "sync" && <SyncSection />}
-                {activeSection === "settings" && <SettingsSection />}
+                {activeSection === "settings" && (
+                  <SettingsSection apiClient={apiClient} settings={settings} onSettingsUpdate={setSettings} />
+                )}
               </>
             )}
           </main>
