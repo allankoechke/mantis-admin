@@ -18,6 +18,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Textarea } from "@/components/ui/textarea"
 import type { ApiClient, TableMetadata } from "@/lib/api"
 
 interface TableConfigDrawerProps {
@@ -113,8 +114,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
   return (
     <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent side="right" className="w-[600px] max-w-[90vw]">
-        <DrawerHeader>
+      <DrawerContent side="right" className="w-[800px] max-w-[90vw]">
+        <DrawerHeader className="border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Cog className="h-5 w-5" />
@@ -127,87 +128,93 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
           <DrawerDescription>Manage table schema and access control rules</DrawerDescription>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="schema">Schema</TabsTrigger>
-              <TabsTrigger value="rules">Access Rules</TabsTrigger>
-            </TabsList>
+        <ScrollArea className="flex-1">
+          <div className="p-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="schema">Schema</TabsTrigger>
+                <TabsTrigger value="rules">Access Rules</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="schema" className="space-y-4 mt-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium">Table Structure</h4>
-                  <p className="text-sm text-muted-foreground">Modify columns and their properties</p>
+              <TabsContent value="schema" className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-medium">Table Structure</h4>
+                    <p className="text-sm text-muted-foreground">Modify columns and their properties</p>
+                  </div>
+                  {table.type !== "view" && (
+                    <Button type="button" variant="outline" size="sm" onClick={addColumn}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Column
+                    </Button>
+                  )}
                 </div>
-                {table.type !== "view" && (
-                  <Button type="button" variant="outline" size="sm" onClick={addColumn}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Column
-                  </Button>
-                )}
-              </div>
 
-              {table.type === "view" ? (
-                <div className="p-4 bg-muted rounded-lg">
-                  <h5 className="font-medium mb-2">SQL Query</h5>
-                  <pre className="text-sm overflow-x-auto">
-                    <code>{table.sql}</code>
-                  </pre>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {columns.map((column, index) => {
-                    const isSystem = isSystemColumn(column.name)
-                    return (
-                      <div
-                        key={index}
-                        className={`flex flex-col gap-3 p-3 border rounded-lg ${isSystem ? "bg-muted/50" : ""}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Input
-                            placeholder="Column name"
-                            value={column.name}
-                            onChange={(e) => updateColumn(index, "name", e.target.value)}
-                            disabled={isSystem}
-                            className={`flex-1 ${isSystem ? "bg-muted" : ""}`}
-                          />
-                          {isSystem && (
-                            <Badge variant="outline" className="text-xs">
-                              System
-                            </Badge>
-                          )}
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeColumn(index)}
-                            disabled={columns.length === 1 || isSystem}
-                            className={isSystem ? "opacity-30" : ""}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                {table.type === "view" ? (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <h5 className="font-medium mb-3">SQL Query</h5>
+                    <pre className="text-sm overflow-x-auto whitespace-pre-wrap">
+                      <code>{table.sql}</code>
+                    </pre>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {columns.map((column, index) => {
+                      const isSystem = isSystemColumn(column.name)
+                      return (
+                        <div key={index} className={`p-4 border rounded-lg space-y-4 ${isSystem ? "bg-muted/50" : ""}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <Label className="text-sm font-medium mb-2 block">Column Name</Label>
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  placeholder="Column name"
+                                  value={column.name}
+                                  onChange={(e) => updateColumn(index, "name", e.target.value)}
+                                  disabled={isSystem}
+                                  className={`flex-1 ${isSystem ? "bg-muted" : ""}`}
+                                />
+                                {isSystem && (
+                                  <Badge variant="outline" className="text-xs">
+                                    System
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="w-40">
+                              <Label className="text-sm font-medium mb-2 block">Data Type</Label>
+                              <Select
+                                value={column.type}
+                                onValueChange={(value) => updateColumn(index, "type", value)}
+                                disabled={isSystem}
+                              >
+                                <SelectTrigger className={isSystem ? "bg-muted" : ""}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {dataTypes.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                      {type.toUpperCase()}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="pt-6">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeColumn(index)}
+                                disabled={columns.length === 1 || isSystem}
+                                className={isSystem ? "opacity-30" : ""}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
 
-                        <div className="flex items-center gap-2">
-                          <Select
-                            value={column.type}
-                            onValueChange={(value) => updateColumn(index, "type", value)}
-                            disabled={isSystem}
-                          >
-                            <SelectTrigger className={`w-32 ${isSystem ? "bg-muted" : ""}`}>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {dataTypes.map((type) => (
-                                <SelectItem key={type} value={type}>
-                                  {type.toUpperCase()}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-
-                          <div className="flex items-center space-x-4">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div className="flex items-center space-x-2">
                               <input
                                 type="checkbox"
@@ -217,8 +224,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                 disabled={isSystem}
                                 className="rounded"
                               />
-                              <Label htmlFor={`primary-${index}`} className="text-xs">
-                                PK
+                              <Label htmlFor={`primary-${index}`} className="text-sm">
+                                Primary Key
                               </Label>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -230,7 +237,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                 disabled={isSystem}
                                 className="rounded"
                               />
-                              <Label htmlFor={`unique-${index}`} className="text-xs">
+                              <Label htmlFor={`unique-${index}`} className="text-sm">
                                 Unique
                               </Label>
                             </div>
@@ -243,7 +250,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                 disabled={isSystem}
                                 className="rounded"
                               />
-                              <Label htmlFor={`required-${index}`} className="text-xs">
+                              <Label htmlFor={`required-${index}`} className="text-sm">
                                 Required
                               </Label>
                             </div>
@@ -256,121 +263,142 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                 disabled={isSystem}
                                 className="rounded"
                               />
-                              <Label htmlFor={`files-${index}`} className="text-xs">
-                                Files
+                              <Label htmlFor={`files-${index}`} className="text-sm">
+                                File Field
                               </Label>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              {table.type !== "view" && (
-                <div className="text-sm text-muted-foreground">
-                  <p>
-                    <Badge variant="outline" className="text-xs mr-2">
-                      System
-                    </Badge>
-                    System columns are automatically managed and cannot be modified.
-                  </p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="rules" className="space-y-4 mt-4">
-              <div>
-                <h4 className="font-medium mb-4">Access Control Rules</h4>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="list-rule">List Rule</Label>
-                    <Input
-                      id="list-rule"
-                      placeholder='e.g., "True", "auth.id != None", ""'
-                      value={rules.list}
-                      onChange={(e) => setRules({ ...rules, list: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">Controls who can list records</p>
+                      )
+                    })}
                   </div>
+                )}
 
-                  <div>
-                    <Label htmlFor="get-rule">Get Rule</Label>
-                    <Input
-                      id="get-rule"
-                      placeholder='e.g., "True", "auth.id == record.user_id"'
-                      value={rules.get}
-                      onChange={(e) => setRules({ ...rules, get: e.target.value })}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">Controls who can view individual records</p>
-                  </div>
-
-                  {table.type !== "view" && (
-                    <>
-                      <div>
-                        <Label htmlFor="add-rule">Add Rule</Label>
-                        <Input
-                          id="add-rule"
-                          placeholder='e.g., "auth.id != None", "auth.role == "admin""'
-                          value={rules.add}
-                          onChange={(e) => setRules({ ...rules, add: e.target.value })}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Controls who can create new records</p>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="update-rule">Update Rule</Label>
-                        <Input
-                          id="update-rule"
-                          placeholder='e.g., "auth.id == record.user_id", ""'
-                          value={rules.update}
-                          onChange={(e) => setRules({ ...rules, update: e.target.value })}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Controls who can update records</p>
-                      </div>
-
-                      <div>
-                        <Label htmlFor="delete-rule">Delete Rule</Label>
-                        <Input
-                          id="delete-rule"
-                          placeholder='e.g., "auth.role == "admin"", ""'
-                          value={rules.delete}
-                          onChange={(e) => setRules({ ...rules, delete: e.target.value })}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Controls who can delete records</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <h5 className="font-medium mb-2">Rule Examples</h5>
-                  <div className="space-y-1 text-sm text-muted-foreground">
+                {table.type !== "view" && (
+                  <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">
                     <p>
-                      <code>""</code> - Admin access only
-                    </p>
-                    <p>
-                      <code>"True"</code> - Public access
-                    </p>
-                    <p>
-                      <code>"auth.id != None"</code> - Authenticated users only
-                    </p>
-                    <p>
-                      <code>"auth.id == record.user_id"</code> - Owner access only
-                    </p>
-                    <p>
-                      <code>"auth.role == \"admin\""</code> - Admin role required
+                      <Badge variant="outline" className="text-xs mr-2">
+                        System
+                      </Badge>
+                      System columns are automatically managed and cannot be modified.
                     </p>
                   </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="rules" className="space-y-6">
+                <div>
+                  <h4 className="text-lg font-medium mb-4">Access Control Rules</h4>
+                  <div className="space-y-6">
+                    <div>
+                      <Label htmlFor="list-rule" className="text-sm font-medium">
+                        List Rule
+                      </Label>
+                      <Textarea
+                        id="list-rule"
+                        placeholder='e.g., "True", "auth.id != None", ""'
+                        value={rules.list}
+                        onChange={(e) => setRules({ ...rules, list: e.target.value })}
+                        className="mt-2"
+                        rows={2}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Controls who can list records</p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="get-rule" className="text-sm font-medium">
+                        Get Rule
+                      </Label>
+                      <Textarea
+                        id="get-rule"
+                        placeholder='e.g., "True", "auth.id == record.user_id"'
+                        value={rules.get}
+                        onChange={(e) => setRules({ ...rules, get: e.target.value })}
+                        className="mt-2"
+                        rows={2}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">Controls who can view individual records</p>
+                    </div>
+
+                    {table.type !== "view" && (
+                      <>
+                        <div>
+                          <Label htmlFor="add-rule" className="text-sm font-medium">
+                            Add Rule
+                          </Label>
+                          <Textarea
+                            id="add-rule"
+                            placeholder='e.g., "auth.id != None", "auth.role == "admin""'
+                            value={rules.add}
+                            onChange={(e) => setRules({ ...rules, add: e.target.value })}
+                            className="mt-2"
+                            rows={2}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Controls who can create new records</p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="update-rule" className="text-sm font-medium">
+                            Update Rule
+                          </Label>
+                          <Textarea
+                            id="update-rule"
+                            placeholder='e.g., "auth.id == record.user_id", ""'
+                            value={rules.update}
+                            onChange={(e) => setRules({ ...rules, update: e.target.value })}
+                            className="mt-2"
+                            rows={2}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Controls who can update records</p>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="delete-rule" className="text-sm font-medium">
+                            Delete Rule
+                          </Label>
+                          <Textarea
+                            id="delete-rule"
+                            placeholder='e.g., "auth.role == "admin"", ""'
+                            value={rules.delete}
+                            onChange={(e) => setRules({ ...rules, delete: e.target.value })}
+                            className="mt-2"
+                            rows={2}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">Controls who can delete records</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-6 p-4 bg-muted rounded-lg">
+                    <h5 className="font-medium mb-3">Rule Examples</h5>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        <p>
+                          <code className="bg-background px-2 py-1 rounded">""</code> - Admin access only
+                        </p>
+                        <p>
+                          <code className="bg-background px-2 py-1 rounded">"True"</code> - Public access
+                        </p>
+                        <p>
+                          <code className="bg-background px-2 py-1 rounded">"auth.id != None"</code> - Authenticated
+                          users
+                        </p>
+                        <p>
+                          <code className="bg-background px-2 py-1 rounded">"auth.id == record.user_id"</code> - Owner
+                          only
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </TabsContent>
-          </Tabs>
+              </TabsContent>
+            </Tabs>
+          </div>
         </ScrollArea>
 
-        <DrawerFooter>
-          <div className="flex gap-2">
+        <DrawerFooter className="border-t mt-6">
+          <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>

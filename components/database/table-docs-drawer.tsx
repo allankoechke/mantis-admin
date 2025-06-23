@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { FileText, ChevronDown, ChevronRight, X } from "lucide-react"
+import { FileText, ChevronDown, ChevronRight, X, Copy } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,8 +19,8 @@ interface TableDocsDrawerProps {
 export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) {
   return (
     <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent side="right" className="w-[600px] max-w-[90vw]">
-        <DrawerHeader>
+      <DrawerContent side="right" className="w-[900px] max-w-[90vw]">
+        <DrawerHeader className="border-b">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -33,8 +33,8 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
           <DrawerDescription>Auto-generated API endpoints and examples</DrawerDescription>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1 px-6 pb-6">
-          <div className="space-y-4">
+        <ScrollArea className="flex-1">
+          <div className="p-6 space-y-6">
             <ApiEndpointCard
               method="GET"
               endpoint={`/api/v1/tables/${table.name}`}
@@ -103,16 +103,20 @@ function ApiEndpointCard({
   const getMethodColor = (method: string) => {
     switch (method) {
       case "GET":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
       case "POST":
-        return "bg-blue-100 text-blue-800"
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200"
       case "PATCH":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
       case "DELETE":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
     }
+  }
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
   }
 
   const generateRequestExample = () => {
@@ -199,59 +203,86 @@ function ApiEndpointCard({
     return JSON.stringify(sampleRecord, null, 2)
   }
 
+  const requestExample = generateRequestExample()
+  const responseExample = generateResponseExample()
+
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger asChild>
         <div className="p-4 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Badge className={getMethodColor(method)}>{method}</Badge>
-              <code className="text-sm">{endpoint}</code>
+            <div className="flex items-center gap-3">
+              <Badge className={getMethodColor(method)} variant="secondary">
+                {method}
+              </Badge>
+              <code className="text-sm font-mono bg-muted px-2 py-1 rounded">{endpoint}</code>
               {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">{description}</p>
+          <p className="text-sm text-muted-foreground mt-2">{description}</p>
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="border-l-2 border-muted ml-4 pl-4 space-y-4">
+        <div className="border-l-2 border-muted ml-4 pl-6 space-y-6 mt-4">
           <div>
-            <h5 className="font-medium mb-2">Request Example</h5>
-            <pre className="bg-muted p-3 rounded text-sm overflow-x-auto">
-              <code>{generateRequestExample()}</code>
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="font-medium">Request Example</h5>
+              <Button variant="outline" size="sm" onClick={() => copyToClipboard(requestExample)} className="h-8">
+                <Copy className="h-3 w-3 mr-1" />
+                Copy
+              </Button>
+            </div>
+            <pre className="bg-muted p-4 rounded text-sm overflow-x-auto border">
+              <code>{requestExample}</code>
             </pre>
           </div>
 
           <div>
-            <h5 className="font-medium mb-2">Response Example</h5>
-            <pre className="bg-muted p-3 rounded text-sm overflow-x-auto">
-              <code>{generateResponseExample()}</code>
+            <div className="flex items-center justify-between mb-3">
+              <h5 className="font-medium">Response Example</h5>
+              <Button variant="outline" size="sm" onClick={() => copyToClipboard(responseExample)} className="h-8">
+                <Copy className="h-3 w-3 mr-1" />
+                Copy
+              </Button>
+            </div>
+            <pre className="bg-muted p-4 rounded text-sm overflow-x-auto border">
+              <code>{responseExample}</code>
             </pre>
           </div>
 
           <div>
-            <h5 className="font-medium mb-2">Possible Errors</h5>
-            <div className="space-y-2 text-sm">
+            <h5 className="font-medium mb-3">Possible Errors</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
               <div className="flex items-center gap-2">
-                <Badge variant="destructive">400</Badge>
+                <Badge variant="destructive" className="text-xs">
+                  400
+                </Badge>
                 <span>Bad Request - Invalid input data</span>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="destructive">401</Badge>
+                <Badge variant="destructive" className="text-xs">
+                  401
+                </Badge>
                 <span>Unauthorized - Invalid or missing token</span>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="destructive">403</Badge>
+                <Badge variant="destructive" className="text-xs">
+                  403
+                </Badge>
                 <span>Forbidden - Access denied by rules</span>
               </div>
               {(operation === "get" || operation === "update" || operation === "delete") && (
                 <div className="flex items-center gap-2">
-                  <Badge variant="destructive">404</Badge>
+                  <Badge variant="destructive" className="text-xs">
+                    404
+                  </Badge>
                   <span>Not Found - Record does not exist</span>
                 </div>
               )}
               <div className="flex items-center gap-2">
-                <Badge variant="destructive">500</Badge>
+                <Badge variant="destructive" className="text-xs">
+                  500
+                </Badge>
                 <span>Internal Server Error - Server error</span>
               </div>
             </div>
