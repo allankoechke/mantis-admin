@@ -1,5 +1,5 @@
 "use client"
-import { Eye, EyeOff, Settings } from "lucide-react"
+import { Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -40,7 +40,7 @@ export function ColumnVisibilityDropdown({ table, visibleColumns, onVisibilityCh
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
-          <Settings className="h-4 w-4 mr-2" />
+          <Eye className="h-4 w-4 mr-2" />
           Columns
         </Button>
       </DropdownMenuTrigger>

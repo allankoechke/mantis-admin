@@ -161,31 +161,25 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div>
-                <CardTitle>Table Data</CardTitle>
-                <CardDescription>Current records in the {table.name} table</CardDescription>
-              </div>
+            <div>
+              <CardTitle>Table Data</CardTitle>
+              <CardDescription>Current records in the {table.name} table</CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
               {selectedItems.length > 0 && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleDeleteSelected}
-                  disabled={isDeleting}
-                  className="ml-auto"
-                >
+                <Button variant="destructive" size="sm" onClick={handleDeleteSelected} disabled={isDeleting}>
                   <Trash2 className="h-4 w-4 mr-2" />
                   {isDeleting
                     ? "Deleting..."
                     : `Delete ${selectedItems.length} item${selectedItems.length > 1 ? "s" : ""}`}
                 </Button>
               )}
+              <ColumnVisibilityDropdown
+                table={table}
+                visibleColumns={visibleColumns}
+                onVisibilityChange={setVisibleColumns}
+              />
             </div>
-            <ColumnVisibilityDropdown
-              table={table}
-              visibleColumns={visibleColumns}
-              onVisibilityChange={setVisibleColumns}
-            />
           </div>
         </CardHeader>
         <CardContent>

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Table, Settings, Shield, LogOut, FileText, RefreshCw } from "lucide-react"
+import { Table, Settings, Shield, LogOut, FileText, RefreshCw, ExternalLink } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -22,6 +22,7 @@ import { SettingsSection } from "./settings/settings-section"
 import { LogsSection } from "./logs/logs-section"
 import { SyncSection } from "./sync/sync-section"
 import { useToast } from "@/hooks/use-toast"
+import { ThemeToggle } from "./theme-toggle"
 
 interface AdminDashboardProps {
   token: string
@@ -144,6 +145,17 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
           </SidebarContent>
           <SidebarFooter>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="https://docs.example.com" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    <span>Documentation</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <ThemeToggle />
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />

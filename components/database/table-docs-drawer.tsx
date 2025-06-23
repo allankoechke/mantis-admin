@@ -17,8 +17,12 @@ interface TableDocsDrawerProps {
 }
 
 export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) {
+  const handleClose = () => {
+    onClose()
+  }
+
   return (
-    <Drawer open={open} onOpenChange={onClose}>
+    <Drawer open={open} onOpenChange={handleClose}>
       <DrawerContent side="right" className="w-[1000px] max-w-[95vw]">
         <DrawerHeader>
           <div className="flex items-center justify-between">

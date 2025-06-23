@@ -29,10 +29,12 @@ interface EditItemDrawerProps {
 export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUpdate }: EditItemDrawerProps) {
   const [formData, setFormData] = React.useState<any>({})
   const [isLoading, setIsLoading] = React.useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false)
 
   React.useEffect(() => {
     if (open && item) {
       setFormData({ ...item })
+      setHasUnsavedChanges(false)
     }
   }, [open, item])
 
@@ -57,14 +59,26 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
       ...prev,
       [fieldName]: value,
     }))
+    setHasUnsavedChanges(true)
   }
 
   const isSystemField = (fieldName: string) => {
     return ["id", "created", "updated"].includes(fieldName)
   }
 
+  const handleClose = () => {
+    if (hasUnsavedChanges) {
+      if (confirm("You have unsaved changes. Are you sure you want to close?")) {
+        setHasUnsavedChanges(false)
+        onClose()
+      }
+    } else {
+      onClose()
+    }
+  }
+
   return (
-    <Drawer open={open} onOpenChange={onClose}>
+    <Drawer open={open} onOpenChange={handleClose}>
       <DrawerContent side="right" className="w-[700px] max-w-[95vw]">
         <DrawerHeader>
           <div className="flex items-center justify-between">
@@ -72,7 +86,7 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
               <Edit className="h-5 w-5" />
               <DrawerTitle>Edit Record</DrawerTitle>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+            <Button variant="ghost" size="sm" onClick={handleClose}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -110,7 +124,7 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
 
         <DrawerFooter>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} className="flex-1">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
               Cancel
             </Button>
             <Button onClick={handleSubmit} disabled={isLoading} className="flex-1">
