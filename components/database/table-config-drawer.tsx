@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Trash2, Cog } from "lucide-react"
+import { Plus, Trash2, Cog, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/drawer"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import type { ApiClient, TableMetadata } from "@/lib/api"
 
 interface TableConfigDrawerProps {
@@ -112,16 +113,21 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
   return (
     <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent className="max-h-[90vh]">
+      <DrawerContent side="right" className="w-[600px] max-w-[90vw]">
         <DrawerHeader>
-          <DrawerTitle className="flex items-center gap-2">
-            <Cog className="h-5 w-5" />
-            Configure {table.name} Table
-          </DrawerTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Cog className="h-5 w-5" />
+              <DrawerTitle>Configure {table.name} Table</DrawerTitle>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           <DrawerDescription>Manage table schema and access control rules</DrawerDescription>
         </DrawerHeader>
 
-        <div className="px-4 overflow-y-auto">
+        <ScrollArea className="flex-1 px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="schema">Schema</TabsTrigger>
@@ -150,37 +156,46 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                   </pre>
                 </div>
               ) : (
-                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                <div className="space-y-3">
                   {columns.map((column, index) => {
                     const isSystem = isSystemColumn(column.name)
                     return (
                       <div
                         key={index}
-                        className={`flex items-center gap-3 p-3 border rounded-lg ${isSystem ? "bg-muted/50" : ""}`}
+                        className={`flex flex-col gap-3 p-3 border rounded-lg ${isSystem ? "bg-muted/50" : ""}`}
                       >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <Input
-                              placeholder="Column name"
-                              value={column.name}
-                              onChange={(e) => updateColumn(index, "name", e.target.value)}
-                              disabled={isSystem}
-                              className={isSystem ? "bg-muted" : ""}
-                            />
-                            {isSystem && (
-                              <Badge variant="outline" className="text-xs">
-                                System
-                              </Badge>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            placeholder="Column name"
+                            value={column.name}
+                            onChange={(e) => updateColumn(index, "name", e.target.value)}
+                            disabled={isSystem}
+                            className={`flex-1 ${isSystem ? "bg-muted" : ""}`}
+                          />
+                          {isSystem && (
+                            <Badge variant="outline" className="text-xs">
+                              System
+                            </Badge>
+                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeColumn(index)}
+                            disabled={columns.length === 1 || isSystem}
+                            className={isSystem ? "opacity-30" : ""}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <div className="w-32">
+
+                        <div className="flex items-center gap-2">
                           <Select
                             value={column.type}
                             onValueChange={(value) => updateColumn(index, "type", value)}
                             disabled={isSystem}
                           >
-                            <SelectTrigger className={isSystem ? "bg-muted" : ""}>
+                            <SelectTrigger className={`w-32 ${isSystem ? "bg-muted" : ""}`}>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -191,71 +206,62 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                               ))}
                             </SelectContent>
                           </Select>
+
+                          <div className="flex items-center space-x-4">
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`primary-${index}`}
+                                checked={column.primaryKey}
+                                onChange={(e) => updateColumn(index, "primaryKey", e.target.checked)}
+                                disabled={isSystem}
+                                className="rounded"
+                              />
+                              <Label htmlFor={`primary-${index}`} className="text-xs">
+                                PK
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`unique-${index}`}
+                                checked={column.unique || false}
+                                onChange={(e) => updateColumn(index, "unique", e.target.checked)}
+                                disabled={isSystem}
+                                className="rounded"
+                              />
+                              <Label htmlFor={`unique-${index}`} className="text-xs">
+                                Unique
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`required-${index}`}
+                                checked={!column.nullable}
+                                onChange={(e) => updateColumn(index, "nullable", !e.target.checked)}
+                                disabled={isSystem}
+                                className="rounded"
+                              />
+                              <Label htmlFor={`required-${index}`} className="text-xs">
+                                Required
+                              </Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`files-${index}`}
+                                checked={column.isFile || false}
+                                onChange={(e) => updateColumn(index, "isFile", e.target.checked)}
+                                disabled={isSystem}
+                                className="rounded"
+                              />
+                              <Label htmlFor={`files-${index}`} className="text-xs">
+                                Files
+                              </Label>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`primary-${index}`}
-                              checked={column.primaryKey}
-                              onChange={(e) => updateColumn(index, "primaryKey", e.target.checked)}
-                              disabled={isSystem}
-                              className="rounded"
-                            />
-                            <Label htmlFor={`primary-${index}`} className="text-xs">
-                              PK
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`unique-${index}`}
-                              checked={column.unique || false}
-                              onChange={(e) => updateColumn(index, "unique", e.target.checked)}
-                              disabled={isSystem}
-                              className="rounded"
-                            />
-                            <Label htmlFor={`unique-${index}`} className="text-xs">
-                              Unique
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`required-${index}`}
-                              checked={!column.nullable}
-                              onChange={(e) => updateColumn(index, "nullable", !e.target.checked)}
-                              disabled={isSystem}
-                              className="rounded"
-                            />
-                            <Label htmlFor={`required-${index}`} className="text-xs">
-                              Required
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`files-${index}`}
-                              checked={column.isFile || false}
-                              onChange={(e) => updateColumn(index, "isFile", e.target.checked)}
-                              disabled={isSystem}
-                              className="rounded"
-                            />
-                            <Label htmlFor={`files-${index}`} className="text-xs">
-                              Files
-                            </Label>
-                          </div>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removeColumn(index)}
-                          disabled={columns.length === 1 || isSystem}
-                          className={isSystem ? "opacity-30" : ""}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     )
                   })}
@@ -361,7 +367,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
               </div>
             </TabsContent>
           </Tabs>
-        </div>
+        </ScrollArea>
 
         <DrawerFooter>
           <div className="flex gap-2">

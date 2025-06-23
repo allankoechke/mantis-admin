@@ -1,11 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { FileText, ChevronDown, ChevronRight } from "lucide-react"
+import { FileText, ChevronDown, ChevronRight, X } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import type { TableMetadata } from "@/lib/api"
 
 interface TableDocsDrawerProps {
@@ -17,16 +19,21 @@ interface TableDocsDrawerProps {
 export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) {
   return (
     <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent className="max-h-[90vh]">
+      <DrawerContent side="right" className="w-[600px] max-w-[90vw]">
         <DrawerHeader>
-          <DrawerTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            API Documentation - {table.name}
-          </DrawerTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              <DrawerTitle>API Documentation - {table.name}</DrawerTitle>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
           <DrawerDescription>Auto-generated API endpoints and examples</DrawerDescription>
         </DrawerHeader>
 
-        <div className="px-4 pb-4 overflow-y-auto">
+        <ScrollArea className="flex-1 px-6 pb-6">
           <div className="space-y-4">
             <ApiEndpointCard
               method="GET"
@@ -72,7 +79,7 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
               </>
             )}
           </div>
-        </div>
+        </ScrollArea>
       </DrawerContent>
     </Drawer>
   )
