@@ -1,12 +1,13 @@
 "use client"
 
 import * as React from "react"
-import { RefreshCw, Cog, FileText, Trash2 } from "lucide-react"
+import { RefreshCw, Cog, FileText, Trash2, Search } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import type { ApiClient, TableMetadata } from "@/lib/api"
 import { TableConfigDrawer } from "./table-config-drawer"
@@ -32,10 +33,12 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   const [selectedItems, setSelectedItems] = React.useState<string[]>([])
   const [visibleColumns, setVisibleColumns] = React.useState<string[]>(table.fields?.map((field) => field.name) || [])
   const [isDeleting, setIsDeleting] = React.useState(false)
+  const [filterTerm, setFilterTerm] = React.useState("")
+  const [appliedFilter, setAppliedFilter] = React.useState("")
 
   React.useEffect(() => {
     loadTableData()
-  }, [currentPage])
+  }, [currentPage, appliedFilter])
 
   React.useEffect(() => {
     setVisibleColumns(table.fields?.map((field) => field.name) || [])
@@ -44,7 +47,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   const loadTableData = async () => {
     setIsLoading(true)
     try {
-      // Mock table data with pagination
+      // Mock table data with pagination and filtering
       const mockData = Array.from({ length: 5 }, (_, i) => {
         const id = `${currentPage}-${i + 1}`
         const baseData: any = { id }
@@ -65,7 +68,15 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
         return baseData
       })
 
-      setTableData(mockData)
+      // Apply filter if exists
+      let filteredData = mockData
+      if (appliedFilter) {
+        filteredData = mockData.filter((item) =>
+          Object.values(item).some((value) => String(value).toLowerCase().includes(appliedFilter.toLowerCase())),
+        )
+      }
+
+      setTableData(filteredData)
       setTotalPages(3) // Mock pagination
       setSelectedItems([]) // Clear selection on reload
     } catch (error) {
@@ -77,6 +88,17 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
 
   const handleReload = () => {
     loadTableData()
+  }
+
+  const handleFilter = () => {
+    setAppliedFilter(filterTerm)
+    setCurrentPage(1) // Reset to first page when filtering
+  }
+
+  const handleFilterKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleFilter()
+    }
   }
 
   const handleSelectAll = (checked: boolean) => {
@@ -157,6 +179,39 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
           </Button>
         </div>
       </div>
+
+      {/* Search/Filter Bar */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search records..."
+                value={filterTerm}
+                onChange={(e) => setFilterTerm(e.target.value)}
+                onKeyPress={handleFilterKeyPress}
+                className="pl-10"
+              />
+            </div>
+            <Button onClick={handleFilter} disabled={isLoading}>
+              Filter
+            </Button>
+            {appliedFilter && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setFilterTerm("")
+                  setAppliedFilter("")
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          {appliedFilter && <p className="text-sm text-muted-foreground mt-2">Filtering by: "{appliedFilter}"</p>}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

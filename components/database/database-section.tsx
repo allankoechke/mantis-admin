@@ -24,6 +24,7 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   const [selectedTable, setSelectedTable] = React.useState<string | null>(null)
   const [searchTerm, setSearchTerm] = React.useState("")
   const [editingTable, setEditingTable] = React.useState<TableMetadata | null>(null)
+  const [searchExpanded, setSearchExpanded] = React.useState(false)
 
   const filteredTables = tables.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
@@ -60,21 +61,30 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <SidebarTrigger />
+      {/* Top Bar */}
+      <div className="flex items-center gap-4">
+        <SidebarTrigger />
+
+        {/* Expandable Search */}
+        <div className={`flex items-center transition-all duration-200 ${searchExpanded ? "flex-1" : ""}`}>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tables..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setSearchExpanded(true)}
+              onBlur={() => {
+                if (!searchTerm) setSearchExpanded(false)
+              }}
+              className={`pl-10 transition-all duration-200 ${searchExpanded ? "w-80" : "w-64"}`}
+            />
+          </div>
+        </div>
+
+        <div className="ml-auto">
           <AddTableDialog apiClient={apiClient} onTablesUpdate={onTablesUpdate} />
         </div>
-      </div>
-
-      <div className="flex items-center space-x-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search tables..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
