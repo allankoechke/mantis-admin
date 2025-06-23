@@ -6,6 +6,7 @@ import { RefreshCw, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export function SyncSection() {
   const [isLoading, setIsLoading] = React.useState(false)
@@ -20,9 +21,12 @@ export function SyncSection() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Data Synchronization</h2>
-          <p className="text-muted-foreground">Manage data sync operations and status</p>
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h2 className="text-2xl font-bold">Data Synchronization</h2>
+            <p className="text-muted-foreground">Manage data sync operations and status</p>
+          </div>
         </div>
         <Button onClick={handleSync} disabled={isLoading}>
           <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />

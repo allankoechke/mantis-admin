@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog } from "@/components/ui/dialog"
 import type { ApiClient, Admin } from "@/lib/api"
 import { ChangePasswordDialog } from "./change-password-dialog"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 interface AdminsSectionProps {
   admins: Admin[]
@@ -33,9 +34,12 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Admin Management</h2>
-          <p className="text-muted-foreground">Manage administrator accounts</p>
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h2 className="text-2xl font-bold">Admin Management</h2>
+            <p className="text-muted-foreground">Manage administrator accounts</p>
+          </div>
         </div>
       </div>
 

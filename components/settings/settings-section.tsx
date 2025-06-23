@@ -5,13 +5,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 export function SettingsSection() {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Application Settings</h2>
-        <p className="text-muted-foreground">Configure global application settings</p>
+      <div className="flex items-center gap-4">
+        <SidebarTrigger />
+        <div>
+          <h2 className="text-2xl font-bold">Application Settings</h2>
+          <p className="text-muted-foreground">Configure global application settings</p>
+        </div>
       </div>
 
       <Card>

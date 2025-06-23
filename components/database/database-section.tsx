@@ -12,6 +12,7 @@ import type { ApiClient, TableMetadata } from "@/lib/api"
 import { AddTableDialog } from "./add-table-dialog"
 import { TableDetailView } from "./table-detail-view"
 import { EditSchemaDialog } from "./edit-schema-dialog"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 interface DatabaseSectionProps {
   apiClient: ApiClient
@@ -60,7 +61,10 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <AddTableDialog apiClient={apiClient} onTablesUpdate={onTablesUpdate} />
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <AddTableDialog apiClient={apiClient} onTablesUpdate={onTablesUpdate} />
+        </div>
       </div>
 
       <div className="flex items-center space-x-2">

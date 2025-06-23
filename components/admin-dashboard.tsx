@@ -14,7 +14,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { ApiClient, type TableMetadata, type Admin } from "@/lib/api"
 import { DatabaseSection } from "./database/database-section"
@@ -156,11 +155,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
         </Sidebar>
 
         <div className="flex-1">
-          <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-6">
-            <SidebarTrigger />
-          </header>
-
-          <main className="flex-1 p-6">
+          <main className="p-6">
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="text-center">

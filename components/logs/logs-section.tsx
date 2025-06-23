@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SidebarTrigger } from "@/components/ui/sidebar"
 
 interface LogEntry {
   id: string
@@ -90,9 +91,12 @@ export function LogsSection() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">System Logs</h2>
-          <p className="text-muted-foreground">Monitor system activity and events</p>
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h2 className="text-2xl font-bold">System Logs</h2>
+            <p className="text-muted-foreground">Monitor system activity and events</p>
+          </div>
         </div>
         <Button>
           <Download className="h-4 w-4 mr-2" />
