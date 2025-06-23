@@ -136,7 +136,11 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
                 <SidebarMenu>
                   {sidebarItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton onClick={() => setActiveSection(item.id)} isActive={activeSection === item.id}>
+                      <SidebarMenuButton
+                        onClick={() => setActiveSection(item.id)}
+                        isActive={activeSection === item.id}
+                        className={activeSection === item.id ? "bg-accent text-accent-foreground" : ""}
+                      >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
                       </SidebarMenuButton>
