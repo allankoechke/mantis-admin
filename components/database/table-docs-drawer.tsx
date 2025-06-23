@@ -19,8 +19,8 @@ interface TableDocsDrawerProps {
 export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) {
   return (
     <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent side="right" className="w-[900px] max-w-[90vw]">
-        <DrawerHeader className="border-b">
+      <DrawerContent side="right" className="w-[1000px] max-w-[95vw]">
+        <DrawerHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -33,53 +33,55 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
           <DrawerDescription>Auto-generated API endpoints and examples</DrawerDescription>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1">
-          <div className="p-6 space-y-6">
-            <ApiEndpointCard
-              method="GET"
-              endpoint={`/api/v1/tables/${table.name}`}
-              description={`List all records in the ${table.name} table`}
-              table={table}
-              operation="list"
-            />
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-6 space-y-6">
+              <ApiEndpointCard
+                method="GET"
+                endpoint={`/api/v1/tables/${table.name}`}
+                description={`List all records in the ${table.name} table`}
+                table={table}
+                operation="list"
+              />
 
-            <ApiEndpointCard
-              method="GET"
-              endpoint={`/api/v1/tables/${table.name}/{id}`}
-              description="Get a specific record by ID"
-              table={table}
-              operation="get"
-            />
+              <ApiEndpointCard
+                method="GET"
+                endpoint={`/api/v1/tables/${table.name}/{id}`}
+                description="Get a specific record by ID"
+                table={table}
+                operation="get"
+              />
 
-            {table.type !== "view" && (
-              <>
-                <ApiEndpointCard
-                  method="POST"
-                  endpoint={`/api/v1/tables/${table.name}`}
-                  description="Create a new record"
-                  table={table}
-                  operation="create"
-                />
+              {table.type !== "view" && (
+                <>
+                  <ApiEndpointCard
+                    method="POST"
+                    endpoint={`/api/v1/tables/${table.name}`}
+                    description="Create a new record"
+                    table={table}
+                    operation="create"
+                  />
 
-                <ApiEndpointCard
-                  method="PATCH"
-                  endpoint={`/api/v1/tables/${table.name}/{id}`}
-                  description="Update a specific record"
-                  table={table}
-                  operation="update"
-                />
+                  <ApiEndpointCard
+                    method="PATCH"
+                    endpoint={`/api/v1/tables/${table.name}/{id}`}
+                    description="Update a specific record"
+                    table={table}
+                    operation="update"
+                  />
 
-                <ApiEndpointCard
-                  method="DELETE"
-                  endpoint={`/api/v1/tables/${table.name}/{id}`}
-                  description="Delete a specific record"
-                  table={table}
-                  operation="delete"
-                />
-              </>
-            )}
-          </div>
-        </ScrollArea>
+                  <ApiEndpointCard
+                    method="DELETE"
+                    endpoint={`/api/v1/tables/${table.name}/{id}`}
+                    description="Delete a specific record"
+                    table={table}
+                    operation="delete"
+                  />
+                </>
+              )}
+            </div>
+          </ScrollArea>
+        </div>
       </DrawerContent>
     </Drawer>
   )
@@ -232,9 +234,11 @@ function ApiEndpointCard({
                 Copy
               </Button>
             </div>
-            <pre className="bg-muted p-4 rounded text-sm overflow-x-auto border">
-              <code>{requestExample}</code>
-            </pre>
+            <ScrollArea className="h-48">
+              <pre className="bg-muted p-4 rounded text-sm border">
+                <code>{requestExample}</code>
+              </pre>
+            </ScrollArea>
           </div>
 
           <div>
@@ -245,9 +249,11 @@ function ApiEndpointCard({
                 Copy
               </Button>
             </div>
-            <pre className="bg-muted p-4 rounded text-sm overflow-x-auto border">
-              <code>{responseExample}</code>
-            </pre>
+            <ScrollArea className="h-48">
+              <pre className="bg-muted p-4 rounded text-sm border">
+                <code>{responseExample}</code>
+              </pre>
+            </ScrollArea>
           </div>
 
           <div>

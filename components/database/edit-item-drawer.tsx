@@ -65,8 +65,8 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
 
   return (
     <Drawer open={open} onOpenChange={onClose}>
-      <DrawerContent side="right" className="w-[700px] max-w-[90vw]">
-        <DrawerHeader className="border-b">
+      <DrawerContent side="right" className="w-[700px] max-w-[95vw]">
+        <DrawerHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Edit className="h-5 w-5" />
@@ -79,32 +79,36 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
           <DrawerDescription>Edit record in {table.name} table</DrawerDescription>
         </DrawerHeader>
 
-        <ScrollArea className="flex-1">
-          <div className="p-6 space-y-6">
-            {table.fields?.map((field) => (
-              <div key={field.name} className="space-y-2">
-                <Label htmlFor={field.name} className="text-sm font-medium capitalize">
-                  {field.name}
-                  {!field.nullable && <span className="text-red-500 ml-1">*</span>}
-                </Label>
-                <Input
-                  id={field.name}
-                  type={field.name === "password" ? "password" : field.type === "datetime" ? "datetime-local" : "text"}
-                  value={formData[field.name] || ""}
-                  onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                  disabled={isSystemField(field.name)}
-                  className={`w-full ${isSystemField(field.name) ? "bg-muted" : ""}`}
-                  placeholder={`Enter ${field.name}`}
-                />
-                {isSystemField(field.name) && (
-                  <p className="text-xs text-muted-foreground">System field - cannot be modified</p>
-                )}
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-6 space-y-6">
+              {table.fields?.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <Label htmlFor={field.name} className="text-sm font-medium capitalize">
+                    {field.name}
+                    {!field.nullable && <span className="text-red-500 ml-1">*</span>}
+                  </Label>
+                  <Input
+                    id={field.name}
+                    type={
+                      field.name === "password" ? "password" : field.type === "datetime" ? "datetime-local" : "text"
+                    }
+                    value={formData[field.name] || ""}
+                    onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                    disabled={isSystemField(field.name)}
+                    className={`w-full ${isSystemField(field.name) ? "bg-muted" : ""}`}
+                    placeholder={`Enter ${field.name}`}
+                  />
+                  {isSystemField(field.name) && (
+                    <p className="text-xs text-muted-foreground">System field - cannot be modified</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
 
-        <DrawerFooter className="border-t mt-6">
+        <DrawerFooter>
           <div className="flex gap-3">
             <Button variant="outline" onClick={onClose} className="flex-1">
               Cancel
