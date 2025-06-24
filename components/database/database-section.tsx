@@ -1,0 +1,182 @@
+"use client"
+
+import * as React from "react"
+import { Search, Table, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import type { ApiClient, TableMetadata } from "@/lib/api"
+import { AddTableDialog } from "./add-table-dialog"
+import { TableDetailView } from "./table-detail-view"
+import { EditSchemaDialog } from "./edit-schema-dialog"
+import { SidebarTrigger } from "@/components/ui/sidebar"
+
+interface DatabaseSectionProps {
+  apiClient: ApiClient
+  tables: TableMetadata[]
+  onTablesUpdate: (tables: TableMetadata[]) => void
+}
+
+export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseSectionProps) {
+  const [selectedTable, setSelectedTable] = React.useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = React.useState("")
+  const [editingTable, setEditingTable] = React.useState<TableMetadata | null>(null)
+  const [searchExpanded, setSearchExpanded] = React.useState(false)
+
+  const filteredTables = tables.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
+
+  const handleDeleteTable = async (tableId: string) => {
+    try {
+      await apiClient.call(`/api/v1/tables/${tableId}`, { method: "DELETE" })
+      const updatedTables = await apiClient.call<TableMetadata[]>("/api/v1/tables")
+      onTablesUpdate(updatedTables)
+    } catch (error) {
+      console.error("Failed to delete table:", error)
+    }
+  }
+
+  const handleTableClick = (tableName: string) => {
+    setSelectedTable(tableName)
+  }
+
+  if (selectedTable) {
+    const tableInfo = tables.find((t) => t.name === selectedTable)
+    if (tableInfo) {
+      return (
+        <TableDetailView
+          table={tableInfo}
+          onBack={() => setSelectedTable(null)}
+          apiClient={apiClient}
+          onTableUpdate={(updatedTable) => {
+            const updatedTables = tables.map((t) => (t.id === updatedTable.id ? updatedTable : t))
+            onTablesUpdate(updatedTables)
+          }}
+        />
+      )
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Top Bar */}
+      <div className="flex items-center gap-4">
+        <SidebarTrigger />
+
+        {/* Expandable Search */}
+        <div className={`flex items-center transition-all duration-200 ${searchExpanded ? "flex-1" : ""}`}>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search tables..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onFocus={() => setSearchExpanded(true)}
+              onBlur={() => {
+                if (!searchTerm) setSearchExpanded(false)
+              }}
+              className={`pl-10 transition-all duration-200 ${searchExpanded ? "w-80" : "w-64"}`}
+            />
+          </div>
+        </div>
+
+        <div className="ml-auto">
+          <AddTableDialog apiClient={apiClient} onTablesUpdate={onTablesUpdate} />
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredTables.map((table) => (
+          <Card
+            key={table.id}
+            className="cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => handleTableClick(table.name)}
+          >
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                <div className="flex items-center gap-2">
+                  <Table className="h-4 w-4" />
+                  {table.name}
+                  <Badge
+                    variant={table.type === "auth" ? "default" : table.type === "view" ? "secondary" : "outline"}
+                    className="text-xs"
+                  >
+                    {table.type}
+                  </Badge>
+                </div>
+              </CardTitle>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setSelectedTable(table.name)
+                    }}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View Details
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditingTable(table)
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit Schema
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDeleteTable(table.id)
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Table
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Type:</span>
+                  <span className="font-medium capitalize">{table.type}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Fields:</span>
+                  <span className="font-medium">{table.fields?.length || 0}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Created:</span>
+                  <span className="font-medium">{new Date(table.created).toLocaleDateString()}</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {editingTable && (
+        <EditSchemaDialog
+          table={editingTable}
+          apiClient={apiClient}
+          onClose={() => setEditingTable(null)}
+          onTableUpdate={(updatedTable) => {
+            const updatedTables = tables.map((t) => (t.id === updatedTable.id ? updatedTable : t))
+            onTablesUpdate(updatedTables)
+            setEditingTable(null)
+          }}
+        />
+      )}
+    </div>
+  )
+}
