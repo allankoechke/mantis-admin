@@ -26,6 +26,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
 
   React.useEffect(() => {
     if (settings) {
+      console.log("Settings received:", settings)
       setFormData({ ...settings })
       setHasChanges(false)
     }
@@ -71,7 +72,8 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
     }
   }
 
-  if (!formData && !settings) {
+  // Show loading if we don't have formData yet
+  if (!formData) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -80,12 +82,6 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
         </div>
       </div>
     )
-  }
-
-  // If we have settings but no formData, initialize formData
-  if (settings && !formData) {
-    setFormData({ ...settings })
-    setHasChanges(false)
   }
 
   return (
@@ -114,7 +110,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
               <Label htmlFor="app-name">Application Name</Label>
               <Input
                 id="app-name"
-                value={formData.appName}
+                value={formData?.appName || ""}
                 onChange={(e) => handleInputChange("appName", e.target.value)}
               />
             </div>
@@ -122,7 +118,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
               <Label htmlFor="version">Version</Label>
               <Input
                 id="version"
-                value={formData.version}
+                value={formData?.version || ""}
                 onChange={(e) => handleInputChange("version", e.target.value)}
               />
             </div>
@@ -132,7 +128,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
             <Label htmlFor="base-url">Base URL</Label>
             <Input
               id="base-url"
-              value={formData.baseUrl}
+              value={formData?.baseUrl || ""}
               onChange={(e) => handleInputChange("baseUrl", e.target.value)}
               placeholder="https://your-api-domain.com"
             />
@@ -144,7 +140,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
               <Label htmlFor="max-file-size">Max File Size</Label>
               <Input
                 id="max-file-size"
-                value={formData.maxFileSize}
+                value={formData?.maxFileSize || ""}
                 onChange={(e) => handleInputChange("maxFileSize", e.target.value)}
                 placeholder="10MB"
               />
@@ -154,7 +150,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
               <Input
                 id="session-timeout"
                 type="number"
-                value={formData.sessionTimeout}
+                value={formData?.sessionTimeout || 3600}
                 onChange={(e) => handleInputChange("sessionTimeout", Number.parseInt(e.target.value) || 3600)}
               />
             </div>
@@ -167,7 +163,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
                 <p className="text-sm text-muted-foreground">Enable maintenance mode for the application</p>
               </div>
               <Switch
-                checked={formData.maintenanceMode}
+                checked={formData?.maintenanceMode || false}
                 onCheckedChange={(checked) => handleInputChange("maintenanceMode", checked)}
               />
             </div>
@@ -178,7 +174,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
                 <p className="text-sm text-muted-foreground">Allow new users to register</p>
               </div>
               <Switch
-                checked={formData.allowRegistration}
+                checked={formData?.allowRegistration || false}
                 onCheckedChange={(checked) => handleInputChange("allowRegistration", checked)}
               />
             </div>
@@ -189,7 +185,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
                 <p className="text-sm text-muted-foreground">Require email verification for new accounts</p>
               </div>
               <Switch
-                checked={formData.emailVerificationRequired}
+                checked={formData?.emailVerificationRequired || false}
                 onCheckedChange={(checked) => handleInputChange("emailVerificationRequired", checked)}
               />
             </div>
