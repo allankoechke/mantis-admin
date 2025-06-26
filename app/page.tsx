@@ -22,9 +22,12 @@ export default function Page() {
 
   React.useEffect(() => {
     if (mounted) {
-      if (!token && route.path !== "/login") {
+      // Prevent hash from being used as CSS selector
+      const currentPath = route.path
+
+      if (!token && currentPath !== "/login") {
         navigate("/login")
-      } else if (token && route.path === "/login") {
+      } else if (token && currentPath === "/login") {
         navigate("/tables")
       }
     }

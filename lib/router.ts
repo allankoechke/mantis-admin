@@ -26,9 +26,13 @@ export function parseRoute(hash: string): ParsedRoute {
   // Parse query parameters
   const params: RouteParams = {}
   if (queryPart) {
-    const searchParams = new URLSearchParams(queryPart)
-    for (const [key, value] of searchParams.entries()) {
-      params[key] = value
+    try {
+      const searchParams = new URLSearchParams(queryPart)
+      for (const [key, value] of searchParams.entries()) {
+        params[key] = value
+      }
+    } catch (error) {
+      console.warn("Failed to parse query parameters:", error)
     }
   }
 
@@ -39,7 +43,7 @@ export function parseRoute(hash: string): ParsedRoute {
 }
 
 export function buildRoute(path: string, params?: RouteParams): string {
-  let route = `#${path}`
+  let route = path.startsWith("/") ? path : `/${path}`
 
   if (params && Object.keys(params).length > 0) {
     const searchParams = new URLSearchParams()
@@ -54,7 +58,7 @@ export function buildRoute(path: string, params?: RouteParams): string {
     }
   }
 
-  return route
+  return `#${route}`
 }
 
 export function useRouter() {
@@ -65,25 +69,41 @@ export function useRouter() {
     return { path: "/tables", params: {} }
   })
 
+  const updateRoute = React.useCallback(() => {
+    const newRoute = parseRoute(window.location.hash)
+    setRoute(newRoute)
+  }, [])
+
   React.useEffect(() => {
+    // Set initial route
+    updateRoute()
+
+    // Listen for hash changes
     const handleHashChange = () => {
-      const newRoute = parseRoute(window.location.hash)
-      setRoute(newRoute)
+      updateRoute()
     }
 
-    // Set initial route
-    handleHashChange()
+    // Listen for popstate (back/forward buttons)
+    const handlePopState = () => {
+      updateRoute()
+    }
 
     window.addEventListener("hashchange", handleHashChange)
-    return () => window.removeEventListener("hashchange", handleHashChange)
-  }, [])
+    window.addEventListener("popstate", handlePopState)
+
+    return () => {
+      window.removeEventListener("hashchange", handleHashChange)
+      window.removeEventListener("popstate", handlePopState)
+    }
+  }, [updateRoute])
 
   const navigate = React.useCallback((path: string, params?: RouteParams) => {
     const newRoute = buildRoute(path, params)
-    // Use history.pushState to avoid triggering hashchange event twice
-    window.history.pushState(null, "", newRoute)
-    // Manually trigger route update
-    setRoute(parseRoute(newRoute))
+
+    // Prevent the hash from being used as a CSS selector by updating location properly
+    if (window.location.hash !== newRoute) {
+      window.location.hash = newRoute
+    }
   }, [])
 
   return { route, navigate }

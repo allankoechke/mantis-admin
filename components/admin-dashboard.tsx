@@ -141,8 +141,18 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     },
   ]
 
-  // Extract the section from the route path
-  const currentSection = route.path.split("/")[1] || "tables"
+  // Extract the section from the route path safely
+  const getCurrentSection = () => {
+    try {
+      const pathParts = route.path.split("/").filter(Boolean)
+      return pathParts[0] || "tables"
+    } catch (error) {
+      console.warn("Error parsing route:", error)
+      return "tables"
+    }
+  }
+
+  const currentSection = getCurrentSection()
 
   if (!mounted) {
     return (

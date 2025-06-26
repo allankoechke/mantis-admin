@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import type { ApiClient, AppSettings } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 interface SettingsSectionProps {
   apiClient: ApiClient
@@ -17,6 +18,7 @@ interface SettingsSectionProps {
 }
 
 export function SettingsSection({ apiClient, settings, onSettingsUpdate }: SettingsSectionProps) {
+  const { toast } = useToast()
   const [formData, setFormData] = React.useState<AppSettings | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const [hasChanges, setHasChanges] = React.useState(false)
@@ -185,6 +187,95 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
                 onCheckedChange={(checked) => handleInputChange("emailVerificationRequired", checked)}
               />
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Notification Test Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Notification Testing</CardTitle>
+          <CardDescription>Test different types of notifications and error messages</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Button
+              variant="default"
+              onClick={() => {
+                toast({
+                  title: "Info",
+                  description: "This is a test info message. Everything is working correctly!",
+                })
+              }}
+              className="w-full"
+            >
+              Test Info
+            </Button>
+
+            <Button
+              variant="secondary"
+              onClick={() => {
+                toast({
+                  title: "Warning",
+                  description: "This is a test warning message. Please pay attention to this.",
+                  variant: "default", // warnings use default variant with warning styling
+                })
+              }}
+              className="w-full"
+            >
+              Test Warning
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={() => {
+                toast({
+                  variant: "destructive",
+                  title: "Error",
+                  description: "This is a test error message. Something went wrong!",
+                })
+              }}
+              className="w-full"
+            >
+              Test Error
+            </Button>
+
+            <Button
+              variant="outline"
+              onClick={() => {
+                toast({
+                  variant: "destructive",
+                  title: "Authentication Error",
+                  description: "Your session has expired. Please log in again.",
+                  action: (
+                    <Button variant="outline" size="sm">
+                      Login
+                    </Button>
+                  ),
+                })
+              }}
+              className="w-full"
+            >
+              Test Auth Toast
+            </Button>
+          </div>
+
+          <div className="mt-4 text-sm text-muted-foreground">
+            <p>Use these buttons to test different notification types:</p>
+            <ul className="list-disc list-inside mt-2 space-y-1">
+              <li>
+                <strong>Info:</strong> General information messages
+              </li>
+              <li>
+                <strong>Warning:</strong> Warning notifications
+              </li>
+              <li>
+                <strong>Error:</strong> Error toast notifications
+              </li>
+              <li>
+                <strong>Auth Error:</strong> Authentication error dialog
+              </li>
+            </ul>
           </div>
         </CardContent>
       </Card>

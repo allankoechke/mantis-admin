@@ -28,9 +28,18 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const { route, navigate } = useRouter()
 
-  // Check if we're viewing a specific table
-  const pathParts = route.path.split("/")
-  const selectedTableName = pathParts.length > 2 && pathParts[1] === "tables" ? pathParts[2] : null
+  // Check if we're viewing a specific table - safer parsing
+  const getSelectedTableName = () => {
+    try {
+      const pathParts = route.path.split("/").filter(Boolean)
+      return pathParts.length > 1 && pathParts[0] === "tables" ? pathParts[1] : null
+    } catch (error) {
+      console.warn("Error parsing table route:", error)
+      return null
+    }
+  }
+
+  const selectedTableName = getSelectedTableName()
 
   const filteredTables = tables.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
