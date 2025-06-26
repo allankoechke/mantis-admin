@@ -90,17 +90,32 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const loadData = async () => {
     try {
       setLoading(true)
+      console.log("Loading dashboard data...")
+
       const [tablesData, adminsData, settingsData] = await Promise.all([
         apiClient.call<TableMetadata[]>("/api/v1/tables"),
         apiClient.call<Admin[]>("/api/v1/admins"),
         apiClient.call<AppSettings>("/api/v1/settings"),
       ])
 
+      console.log("Data loaded:", { tablesData, adminsData, settingsData })
+
       setTables(tablesData)
       setAdmins(adminsData)
       setSettings(settingsData)
     } catch (error) {
       console.error("Failed to load data:", error)
+      // Set default settings if loading fails
+      setSettings({
+        appName: "Admin Dashboard",
+        baseUrl: "https://api.example.com",
+        version: "1.2.3",
+        maintenanceMode: false,
+        maxFileSize: "10MB",
+        allowRegistration: true,
+        emailVerificationRequired: false,
+        sessionTimeout: 3600,
+      })
     } finally {
       setLoading(false)
     }

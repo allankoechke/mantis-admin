@@ -71,7 +71,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
     }
   }
 
-  if (!formData) {
+  if (!formData && !settings) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -80,6 +80,12 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
         </div>
       </div>
     )
+  }
+
+  // If we have settings but no formData, initialize formData
+  if (settings && !formData) {
+    setFormData({ ...settings })
+    setHasChanges(false)
   }
 
   return (

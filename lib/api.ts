@@ -246,11 +246,13 @@ export class ApiClient {
 
     if (url.pathname === "/api/v1/settings") {
       if (method === "GET") {
+        console.log("Returning mock settings:", mockSettings)
         return mockSettings as T
       }
       if (method === "PATCH") {
         const body = JSON.parse(options.body as string)
         Object.assign(mockSettings, body)
+        console.log("Updated mock settings:", mockSettings)
         return mockSettings as T
       }
     }
