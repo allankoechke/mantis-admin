@@ -17,13 +17,6 @@ export default function Page() {
     const savedToken = localStorage.getItem("admin_token")
     if (savedToken) {
       setToken(savedToken)
-      // If we have a token but we're on login route, redirect to tables
-      if (route.path === "/login") {
-        navigate("/tables")
-      }
-    } else {
-      // No token, redirect to login
-      navigate("/login")
     }
   }, [])
 

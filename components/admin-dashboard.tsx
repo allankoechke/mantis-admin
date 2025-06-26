@@ -141,6 +141,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     },
   ]
 
+  // Extract the section from the route path
   const currentSection = route.path.split("/")[1] || "tables"
 
   if (!mounted) {

@@ -28,7 +28,10 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const { route, navigate } = useRouter()
 
-  const selectedTableName = route.path.startsWith("/tables/") ? route.path.split("/")[2] : null
+  // Check if we're viewing a specific table
+  const pathParts = route.path.split("/")
+  const selectedTableName = pathParts.length > 2 && pathParts[1] === "tables" ? pathParts[2] : null
+
   const filteredTables = tables.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   const handleDeleteTable = async (tableId: string) => {

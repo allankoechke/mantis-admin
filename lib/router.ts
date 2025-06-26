@@ -15,6 +15,11 @@ export function parseRoute(hash: string): ParsedRoute {
   // Remove the # if present
   const cleanHash = hash.startsWith("#") ? hash.slice(1) : hash
 
+  // If empty, default to /tables
+  if (!cleanHash) {
+    return { path: "/tables", params: {} }
+  }
+
   // Split path and query string
   const [pathPart, queryPart] = cleanHash.split("?")
 
@@ -62,8 +67,12 @@ export function useRouter() {
 
   React.useEffect(() => {
     const handleHashChange = () => {
-      setRoute(parseRoute(window.location.hash))
+      const newRoute = parseRoute(window.location.hash)
+      setRoute(newRoute)
     }
+
+    // Set initial route
+    handleHashChange()
 
     window.addEventListener("hashchange", handleHashChange)
     return () => window.removeEventListener("hashchange", handleHashChange)
@@ -71,7 +80,10 @@ export function useRouter() {
 
   const navigate = React.useCallback((path: string, params?: RouteParams) => {
     const newRoute = buildRoute(path, params)
-    window.location.hash = newRoute
+    // Use history.pushState to avoid triggering hashchange event twice
+    window.history.pushState(null, "", newRoute)
+    // Manually trigger route update
+    setRoute(parseRoute(newRoute))
   }, [])
 
   return { route, navigate }
