@@ -99,23 +99,23 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
       setLoading(true)
       console.log("Loading dashboard data...")
 
-      const [tablesData, adminsData, settingsData] = await Promise.all([
+      const [tablesData, adminsData/*, settingsData*/] = await Promise.all([
         apiClient.call<TableMetadata[]>("/api/v1/tables"),
         apiClient.call<Admin[]>("/api/v1/admins"),
-        apiClient.call<AppSettings>("/api/v1/settings"),
+        // apiClient.call<AppSettings>("/api/v1/settings"),
       ])
 
-      console.log("Data loaded:", { tablesData, adminsData, settingsData })
+      console.log("Data loaded:", { tablesData, adminsData/*, settingsData */})
 
       setTables(tablesData)
       setAdmins(adminsData)
-      setSettings(settingsData)
+      // setSettings(settingsData)
     } catch (error) {
       console.error("Failed to load data:", error)
       // Set default settings if loading fails
       setSettings({
         appName: "Mantis Admin",
-        baseUrl: "https://api.example.com",
+        baseUrl: "http://127.0.0.1:7070",
         version: "1.2.3",
         maintenanceMode: false,
         maxFileSize: "10MB",
