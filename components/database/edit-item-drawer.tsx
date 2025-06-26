@@ -62,8 +62,8 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
     setHasUnsavedChanges(true)
   }
 
-  const isSystemField = (fieldName: string) => {
-    return ["id", "created", "updated"].includes(fieldName)
+  const isSystemField = (field: any) => {
+    return field.system === true
   }
 
   const handleClose = () => {
@@ -96,7 +96,7 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
         <div className="flex-1 overflow-hidden">
           <ScrollArea className="h-full">
             <div className="p-6 space-y-6">
-              {table.fields?.map((field) => (
+              {table.schema.fields?.map((field) => (
                 <div key={field.name} className="space-y-2">
                   <Label htmlFor={field.name} className="text-sm font-medium capitalize">
                     {field.name}
@@ -105,15 +105,19 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
                   <Input
                     id={field.name}
                     type={
-                      field.name === "password" ? "password" : field.type === "datetime" ? "datetime-local" : "text"
+                      field.name === "password"
+                        ? "password"
+                        : field.type === "datetime" || field.type === "timestamp"
+                          ? "datetime-local"
+                          : "text"
                     }
                     value={formData[field.name] || ""}
                     onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                    disabled={isSystemField(field.name)}
-                    className={`w-full ${isSystemField(field.name) ? "bg-muted" : ""}`}
+                    disabled={isSystemField(field)}
+                    className={`w-full ${isSystemField(field) ? "bg-muted" : ""}`}
                     placeholder={`Enter ${field.name}`}
                   />
-                  {isSystemField(field.name) && (
+                  {isSystemField(field) && (
                     <p className="text-xs text-muted-foreground">System field - cannot be modified</p>
                   )}
                 </div>

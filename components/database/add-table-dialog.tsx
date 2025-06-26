@@ -18,14 +18,15 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { ApiClient, TableMetadata } from "@/lib/api"
+import type { ApiClient, TableMetadata, TableField } from "@/lib/api"
 
 interface AddTableDialogProps {
   apiClient: ApiClient
   onTablesUpdate: (tables: TableMetadata[]) => void
+  children?: React.ReactNode
 }
 
-export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProps) {
+export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTableDialogProps) {
   const [tableType, setTableType] = React.useState<"base" | "auth" | "view">("base")
   const [tableName, setTableName] = React.useState("")
   const [columns, setColumns] = React.useState<
@@ -37,6 +38,7 @@ export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProp
       unique?: boolean
       isFile?: boolean
       isSystem?: boolean
+      required?: boolean
     }>
   >([])
   const [sqlQuery, setSqlQuery] = React.useState("")
@@ -45,10 +47,12 @@ export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProp
 
   const dataTypes = [
     "string",
-    "int",
-    "bigint",
-    "double",
-    "float",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "float32",
+    "float64",
     "boolean",
     "date",
     "datetime",
@@ -65,17 +69,17 @@ export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProp
   React.useEffect(() => {
     if (tableType === "base") {
       setColumns([
-        { name: "id", type: "string", primaryKey: true, nullable: false, isSystem: true },
-        { name: "created", type: "datetime", primaryKey: false, nullable: false, isSystem: true },
-        { name: "updated", type: "datetime", primaryKey: false, nullable: false, isSystem: true },
+        { name: "id", type: "string", primaryKey: true, nullable: false, isSystem: true, required: true },
+        { name: "created", type: "datetime", primaryKey: false, nullable: false, isSystem: true, required: true },
+        { name: "updated", type: "datetime", primaryKey: false, nullable: false, isSystem: true, required: true },
       ])
     } else if (tableType === "auth") {
       setColumns([
-        { name: "id", type: "string", primaryKey: true, nullable: false, isSystem: true },
-        { name: "email", type: "string", primaryKey: false, nullable: false, isSystem: true },
-        { name: "password", type: "string", primaryKey: false, nullable: false, isSystem: true },
-        { name: "created", type: "datetime", primaryKey: false, nullable: false, isSystem: true },
-        { name: "updated", type: "datetime", primaryKey: false, nullable: false, isSystem: true },
+        { name: "id", type: "string", primaryKey: true, nullable: false, isSystem: true, required: true },
+        { name: "email", type: "string", primaryKey: false, nullable: false, isSystem: true, required: true },
+        { name: "password", type: "string", primaryKey: false, nullable: false, isSystem: true, required: true },
+        { name: "created", type: "datetime", primaryKey: false, nullable: false, isSystem: true, required: true },
+        { name: "updated", type: "datetime", primaryKey: false, nullable: false, isSystem: true, required: true },
       ])
     } else {
       setColumns([])
@@ -83,7 +87,10 @@ export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProp
   }, [tableType])
 
   const addColumn = () => {
-    setColumns([...columns, { name: "", type: "string", primaryKey: false, nullable: true, isSystem: false }])
+    setColumns([
+      ...columns,
+      { name: "", type: "string", primaryKey: false, nullable: true, isSystem: false, required: false },
+    ])
   }
 
   const removeColumn = (index: number) => {
@@ -118,7 +125,18 @@ export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProp
       if (tableType === "view") {
         tableData.sql = sqlQuery
       } else {
-        tableData.fields = columns
+        tableData.fields = columns.map(
+          (col): TableField => ({
+            name: col.name,
+            type: col.type,
+            primaryKey: col.primaryKey,
+            nullable: col.nullable,
+            unique: col.unique,
+            isFile: col.isFile,
+            system: col.isSystem,
+            required: col.required,
+          }),
+        )
       }
 
       await apiClient.call("/api/v1/tables", {
@@ -144,10 +162,12 @@ export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProp
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Table
-        </Button>
+        {children || (
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Table
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>

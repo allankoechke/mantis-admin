@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Table, Settings, Shield, LogOut, FileText, RefreshCw, ExternalLink } from "lucide-react"
+import { Table, Settings, Shield, LogOut, FileText, RefreshCw, ExternalLink, AlertTriangle } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,15 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { ApiClient, type TableMetadata, type Admin, type AppSettings } from "@/lib/api"
 import { DatabaseSection } from "./database/database-section"
 import { AdminsSection } from "./admins/admins-section"
@@ -23,6 +32,8 @@ import { LogsSection } from "./logs/logs-section"
 import { SyncSection } from "./sync/sync-section"
 import { useToast } from "@/hooks/use-toast"
 import { ThemeToggle } from "./theme-toggle"
+import { useRouter } from "@/lib/router"
+import { useAppState, type AppMode } from "@/lib/app-state"
 
 interface AdminDashboardProps {
   token: string
@@ -31,53 +42,118 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const [mounted, setMounted] = React.useState(false)
-  const [activeSection, setActiveSection] = React.useState("tables")
   const [tables, setTables] = React.useState<TableMetadata[]>([])
   const [admins, setAdmins] = React.useState<Admin[]>([])
   const [loading, setLoading] = React.useState(true)
-  const { toast } = useToast()
   const [settings, setSettings] = React.useState<AppSettings | null>(null)
+  const [authErrorDialog, setAuthErrorDialog] = React.useState(false)
+  const { toast } = useToast()
+  const { route, navigate } = useRouter()
+  const { mode } = useAppState()
 
   const showError = React.useCallback(
     (error: string, type: "error" | "warning" = "error") => {
-      toast({
-        variant: type === "error" ? "destructive" : "default",
-        title: type === "error" ? "Error" : "Warning",
-        description: error,
-      })
+      try {
+        // Prevent error loops by checking if error is already being shown
+        if (error.includes("Unauthorized") || error.includes("auth")) {
+          return // Don't show toast for auth errors, handle with dialog
+        }
+
+        toast({
+          variant: type === "error" ? "destructive" : "default",
+          title: type === "error" ? "Error" : "Warning",
+          description: error,
+        })
+      } catch (toastError) {
+        console.warn("Failed to show error toast:", toastError)
+      }
     },
     [toast],
   )
 
-  const apiClient = React.useMemo(() => new ApiClient(token, onLogout, showError), [token, onLogout, showError])
+  const handleUnauthorized = React.useCallback(() => {
+    try {
+      setAuthErrorDialog(true)
+    } catch (error) {
+      console.warn("Failed to handle unauthorized:", error)
+    }
+  }, [])
+
+  const [apiClient, setApiClient] = React.useState(
+    () => new ApiClient(token, handleUnauthorized, mode, settings?.baseUrl, showError),
+  )
 
   React.useEffect(() => {
     setMounted(true)
     loadData()
   }, [])
 
+  // Update API client when mode or settings change
+  React.useEffect(() => {
+    const newApiClient = new ApiClient(token, handleUnauthorized, mode, settings?.baseUrl, showError)
+    setApiClient(newApiClient)
+  }, [mode, settings?.baseUrl, token, handleUnauthorized, showError])
+
   const loadData = async () => {
     try {
       setLoading(true)
+      console.log("Loading dashboard data...")
+
       const [tablesData, adminsData, settingsData] = await Promise.all([
         apiClient.call<TableMetadata[]>("/api/v1/tables"),
         apiClient.call<Admin[]>("/api/v1/admins"),
         apiClient.call<AppSettings>("/api/v1/settings"),
       ])
 
+      console.log("Data loaded:", { tablesData, adminsData, settingsData })
+
       setTables(tablesData)
       setAdmins(adminsData)
       setSettings(settingsData)
     } catch (error) {
       console.error("Failed to load data:", error)
+      // Set default settings if loading fails
+      setSettings({
+        appName: "Mantis Admin",
+        baseUrl: "https://api.example.com",
+        version: "1.2.3",
+        maintenanceMode: false,
+        maxFileSize: "10MB",
+        allowRegistration: true,
+        emailVerificationRequired: false,
+        sessionTimeout: 3600,
+        mode: mode,
+      })
     } finally {
       setLoading(false)
     }
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_token")
-    onLogout()
+    try {
+      localStorage.removeItem("admin_token")
+      onLogout()
+    } catch (error) {
+      console.warn("Failed to logout:", error)
+    }
+  }
+
+  const handleAuthErrorLogin = () => {
+    try {
+      setAuthErrorDialog(false)
+      handleLogout()
+    } catch (error) {
+      console.warn("Failed to handle auth error login:", error)
+    }
+  }
+
+  const handleModeChange = (newMode: AppMode, baseUrl?: string) => {
+    // Update API client with new mode and base URL
+    const newApiClient = new ApiClient(token, handleUnauthorized, newMode, baseUrl, showError)
+    setApiClient(newApiClient)
+
+    // Reload data with new mode
+    loadData()
   }
 
   const sidebarItems = [
@@ -85,28 +161,46 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
       title: "Tables",
       icon: Table,
       id: "tables",
+      path: "/tables",
     },
     {
       title: "Admins",
       icon: Shield,
       id: "admins",
+      path: "/admins",
     },
     {
       title: "Logs",
       icon: FileText,
       id: "logs",
+      path: "/logs",
     },
     {
       title: "Sync",
       icon: RefreshCw,
       id: "sync",
+      path: "/sync",
     },
     {
       title: "Settings",
       icon: Settings,
       id: "settings",
+      path: "/settings",
     },
   ]
+
+  // Extract the section from the route path safely
+  const getCurrentSection = () => {
+    try {
+      const pathParts = route.path.split("/").filter(Boolean)
+      return pathParts[0] || "tables"
+    } catch (error) {
+      console.warn("Error parsing route:", error)
+      return "tables"
+    }
+  }
+
+  const currentSection = getCurrentSection()
 
   if (!mounted) {
     return (
@@ -126,7 +220,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
           <SidebarHeader>
             <div className="flex items-center gap-2 px-4 py-2">
               <Shield className="h-6 w-6" />
-              <span className="font-semibold">Admin Dashboard</span>
+              <span className="font-semibold">Mantis Admin</span>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -137,9 +231,15 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
                   {sidebarItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
-                        onClick={() => setActiveSection(item.id)}
-                        isActive={activeSection === item.id}
-                        className={activeSection === item.id ? "bg-accent text-accent-foreground" : ""}
+                        onClick={() => {
+                          try {
+                            navigate(item.path)
+                          } catch (error) {
+                            console.warn("Failed to navigate:", error)
+                          }
+                        }}
+                        isActive={currentSection === item.id}
+                        className={currentSection === item.id ? "bg-accent text-accent-foreground" : ""}
                       >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
@@ -189,22 +289,49 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
               </div>
             ) : (
               <>
-                {activeSection === "tables" && (
+                {currentSection === "tables" && (
                   <DatabaseSection apiClient={apiClient} tables={tables} onTablesUpdate={setTables} />
                 )}
-                {activeSection === "admins" && (
+                {currentSection === "admins" && (
                   <AdminsSection admins={admins} apiClient={apiClient} onAdminsUpdate={setAdmins} />
                 )}
-                {activeSection === "logs" && <LogsSection />}
-                {activeSection === "sync" && <SyncSection />}
-                {activeSection === "settings" && (
-                  <SettingsSection apiClient={apiClient} settings={settings} onSettingsUpdate={setSettings} />
+                {currentSection === "logs" && <LogsSection />}
+                {currentSection === "sync" && <SyncSection />}
+                {currentSection === "settings" && (
+                  <SettingsSection
+                    apiClient={apiClient}
+                    settings={settings}
+                    onSettingsUpdate={setSettings}
+                    onModeChange={handleModeChange}
+                  />
                 )}
               </>
             )}
           </main>
         </div>
       </div>
+
+      {/* Auth Error Dialog */}
+      <Dialog open={authErrorDialog} onOpenChange={setAuthErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Authentication Error
+            </DialogTitle>
+            <DialogDescription>
+              Your session has expired or you don't have permission to access this resource. Please log in again to
+              continue.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAuthErrorDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAuthErrorLogin}>Login Again</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   )
 }

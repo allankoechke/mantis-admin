@@ -56,7 +56,7 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
                 operation="get"
               />
 
-              {table.type !== "view" && (
+              {table.schema.type !== "view" && (
                 <>
                   <ApiEndpointCard
                     method="POST"
@@ -137,7 +137,7 @@ function ApiEndpointCard({
 
     if (operation === "create" || operation === "update") {
       const sampleData: any = {}
-      table.fields?.forEach((field) => {
+      table.schema.fields?.forEach((field) => {
         if (field.name === "id" || field.name === "created" || field.name === "updated") return
         if (field.name === "email") {
           sampleData[field.name] = "user@example.com"
@@ -157,7 +157,7 @@ function ApiEndpointCard({
   const generateResponseExample = () => {
     if (operation === "list") {
       const sampleRecord: any = {}
-      table.fields?.forEach((field) => {
+      table.schema.fields?.forEach((field) => {
         if (field.name === "id") {
           sampleRecord[field.name] = "123e4567-e89b-12d3-a456-426614174000"
         } else if (field.name === "created" || field.name === "updated") {
@@ -192,7 +192,7 @@ function ApiEndpointCard({
 
     // Single record response
     const sampleRecord: any = {}
-    table.fields?.forEach((field) => {
+    table.schema.fields?.forEach((field) => {
       if (field.name === "id") {
         sampleRecord[field.name] = "123e4567-e89b-12d3-a456-426614174000"
       } else if (field.name === "created" || field.name === "updated") {

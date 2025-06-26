@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { RefreshCw, Cog, FileText, Trash2, Search } from "lucide-react"
+import { RefreshCw, Cog, FileText, Trash2, Search, Plus, ExternalLink } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -31,7 +31,9 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   const [docsOpen, setDocsOpen] = React.useState(false)
   const [editingItem, setEditingItem] = React.useState<any>(null)
   const [selectedItems, setSelectedItems] = React.useState<string[]>([])
-  const [visibleColumns, setVisibleColumns] = React.useState<string[]>(table.fields?.map((field) => field.name) || [])
+  const [visibleColumns, setVisibleColumns] = React.useState<string[]>(
+    table.schema.fields?.map((field) => field.name) || [],
+  )
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [filterTerm, setFilterTerm] = React.useState("")
   const [appliedFilter, setAppliedFilter] = React.useState("")
@@ -41,8 +43,8 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   }, [currentPage, appliedFilter])
 
   React.useEffect(() => {
-    setVisibleColumns(table.fields?.map((field) => field.name) || [])
-  }, [table.fields])
+    setVisibleColumns(table.schema.fields?.map((field) => field.name) || [])
+  }, [table.schema.fields])
 
   const loadTableData = async () => {
     setIsLoading(true)
@@ -52,7 +54,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
         const id = `${currentPage}-${i + 1}`
         const baseData: any = { id }
 
-        table.fields?.forEach((field) => {
+        table.schema.fields?.forEach((field) => {
           if (field.name === "id") return
           if (field.name === "created" || field.name === "updated") {
             baseData[field.name] = new Date().toISOString()
@@ -149,7 +151,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
     }
   }
 
-  const filteredFields = table.fields?.filter((field) => visibleColumns.includes(field.name)) || []
+  const filteredFields = table.schema.fields?.filter((field) => visibleColumns.includes(field.name)) || []
 
   return (
     <div className="space-y-6">
@@ -166,8 +168,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={handleReload} disabled={isLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
-            Reload
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
           <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
             <Cog className="h-4 w-4 mr-2" />
@@ -238,54 +239,76 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">
-                    <Checkbox
-                      checked={selectedItems.length === tableData.length && tableData.length > 0}
-                      onCheckedChange={handleSelectAll}
-                      aria-label="Select all"
-                    />
-                  </TableHead>
-                  {filteredFields.map((field) => (
-                    <TableHead key={field.name} className="capitalize">
-                      {field.name}
-                    </TableHead>
-                  ))}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {tableData.length > 0 ? (
-                  tableData.map((row, index) => (
-                    <TableRow
-                      key={index}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={(e) => handleRowClick(row, e)}
-                    >
-                      <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Checkbox
-                          checked={selectedItems.includes(row.id)}
-                          onCheckedChange={(checked) => handleSelectItem(row.id, checked as boolean)}
-                          aria-label={`Select row ${index + 1}`}
-                        />
-                      </TableCell>
-                      {filteredFields.map((field) => (
-                        <TableCell key={field.name}>{row[field.name] || "-"}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
+          {tableData.length === 0 && !isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No Records Found</h3>
+              <p className="text-muted-foreground text-center mb-6 max-w-md">
+                This table doesn't have any records yet. Add some data to get started.
+              </p>
+              <div className="flex gap-3">
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Record
+                </Button>
+                <Button variant="outline" asChild>
+                  <a href="https://docs.example.com/records" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Documentation
+                  </a>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={filteredFields.length + 1} className="text-center text-muted-foreground">
-                      {isLoading ? "Loading..." : "No data available"}
-                    </TableCell>
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={selectedItems.length === tableData.length && tableData.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
+                    {filteredFields.map((field) => (
+                      <TableHead key={field.name} className="capitalize">
+                        {field.name}
+                      </TableHead>
+                    ))}
                   </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {tableData.length > 0 ? (
+                    tableData.map((row, index) => (
+                      <TableRow
+                        key={index}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={(e) => handleRowClick(row, e)}
+                      >
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedItems.includes(row.id)}
+                            onCheckedChange={(checked) => handleSelectItem(row.id, checked as boolean)}
+                            aria-label={`Select row ${index + 1}`}
+                          />
+                        </TableCell>
+                        {filteredFields.map((field) => (
+                          <TableCell key={field.name}>{row[field.name] || "-"}</TableCell>
+                        ))}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={filteredFields.length + 1} className="text-center text-muted-foreground">
+                        {isLoading ? "Loading..." : "No data available"}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">

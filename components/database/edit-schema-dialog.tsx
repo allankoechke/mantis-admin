@@ -26,7 +26,7 @@ interface EditSchemaDialogProps {
 }
 
 export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: EditSchemaDialogProps) {
-  const [columns, setColumns] = React.useState(table.fields || [])
+  const [columns, setColumns] = React.useState(table.schema.fields || [])
   const [isLoading, setIsLoading] = React.useState(false)
 
   const dataTypes = [
@@ -49,13 +49,12 @@ export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: E
   ]
 
   const addColumn = () => {
-    setColumns([...columns, { name: "", type: "string", primaryKey: false, nullable: true }])
+    setColumns([...columns, { name: "", type: "string", primaryKey: false, required: false, system: false }])
   }
 
   const removeColumn = (index: number) => {
     const column = columns[index]
-    const isSystemColumn = ["id", "created", "updated", "email", "password"].includes(column.name)
-    if (columns.length > 1 && !isSystemColumn) {
+    if (columns.length > 1 && !column.system) {
       setColumns(columns.filter((_, i) => i !== index))
     }
   }
@@ -70,7 +69,7 @@ export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: E
     try {
       const updatedTable = await apiClient.call<TableMetadata>(`/api/v1/tables/${table.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ fields: columns }),
+        body: JSON.stringify({ schema: { fields: columns } }),
       })
       onTableUpdate(updatedTable)
     } catch (error) {
@@ -80,8 +79,8 @@ export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: E
     }
   }
 
-  const isSystemColumn = (columnName: string) => {
-    return ["id", "created", "updated", "email", "password"].includes(columnName)
+  const isSystemColumn = (column: any) => {
+    return column.system
   }
 
   return (
@@ -109,7 +108,7 @@ export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: E
 
             <div className="space-y-3 max-h-[400px] overflow-y-auto">
               {columns.map((column, index) => {
-                const isSystem = isSystemColumn(column.name)
+                const isSystem = isSystemColumn(column)
                 return (
                   <div
                     key={index}
@@ -129,6 +128,51 @@ export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: E
                             System
                           </Badge>
                         )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Input
+                          placeholder="Auto Generate Pattern"
+                          value={column.autoGeneratePattern || ""}
+                          onChange={(e) => updateColumn(index, "autoGeneratePattern", e.target.value)}
+                          disabled={isSystem}
+                          className={isSystem ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Input
+                          placeholder="Default Value"
+                          value={column.defaultValue || ""}
+                          onChange={(e) => updateColumn(index, "defaultValue", e.target.value)}
+                          disabled={isSystem}
+                          className={isSystem ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Input
+                          placeholder="Max Value"
+                          value={column.maxValue || ""}
+                          onChange={(e) => updateColumn(index, "maxValue", e.target.value)}
+                          disabled={isSystem}
+                          className={isSystem ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Input
+                          placeholder="Min Value"
+                          value={column.minValue || ""}
+                          onChange={(e) => updateColumn(index, "minValue", e.target.value)}
+                          disabled={isSystem}
+                          className={isSystem ? "bg-muted" : ""}
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mt-2">
+                        <Input
+                          placeholder="Validator"
+                          value={column.validator || ""}
+                          onChange={(e) => updateColumn(index, "validator", e.target.value)}
+                          disabled={isSystem}
+                          className={isSystem ? "bg-muted" : ""}
+                        />
                       </div>
                     </div>
                     <div className="w-32">
@@ -180,8 +224,8 @@ export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: E
                         <input
                           type="checkbox"
                           id={`required-${index}`}
-                          checked={!column.nullable}
-                          onChange={(e) => updateColumn(index, "nullable", !e.target.checked)}
+                          checked={column.required || false}
+                          onChange={(e) => updateColumn(index, "required", e.target.checked)}
                           disabled={isSystem}
                           className="rounded"
                         />

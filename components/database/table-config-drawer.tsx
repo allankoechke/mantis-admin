@@ -31,7 +31,7 @@ interface TableConfigDrawerProps {
 }
 
 export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpdate }: TableConfigDrawerProps) {
-  const [columns, setColumns] = React.useState(table.fields || [])
+  const [columns, setColumns] = React.useState(table.schema?.fields || [])
   const [rules, setRules] = React.useState(table.rules)
   const [isLoading, setIsLoading] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("schema")
@@ -40,7 +40,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
   React.useEffect(() => {
     if (open) {
-      setColumns(table.fields || [])
+      setColumns(table.schema?.fields || [])
       setRules(table.rules)
       setHasUnsavedChanges(false)
       setSystemFieldsCollapsed(true)
@@ -73,7 +73,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
   const removeColumn = (index: number) => {
     const column = columns[index]
-    const isSystemColumn = ["id", "created", "updated", "email", "password"].includes(column.name)
+    const isSystemColumn = column.system
     if (columns.length > 1 && !isSystemColumn) {
       setColumns(columns.filter((_, i) => i !== index))
     }
@@ -90,7 +90,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
     try {
       const updatedTable = await apiClient.call<TableMetadata>(`/api/v1/tables/${table.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ fields: columns }),
+        body: JSON.stringify({ schema: { fields: columns } }),
       })
       onTableUpdate(updatedTable)
     } catch (error) {
@@ -105,7 +105,15 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
     try {
       const updatedTable = await apiClient.call<TableMetadata>(`/api/v1/tables/${table.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ rules }),
+        body: JSON.stringify({
+          rules: {
+            listRule: rules.listRule,
+            getRule: rules.getRule,
+            addRule: rules.addRule,
+            updateRule: rules.updateRule,
+            deleteRule: rules.deleteRule,
+          },
+        }),
       })
       onTableUpdate(updatedTable)
     } catch (error) {
@@ -115,8 +123,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
     }
   }
 
-  const isSystemColumn = (columnName: string) => {
-    return ["id", "created", "updated", "email", "password"].includes(columnName)
+  const isSystemColumn = (column: any) => {
+    return column.system
   }
 
   const handleClose = () => {
@@ -174,14 +182,14 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                       <h5 className="font-medium mb-3">SQL Query</h5>
                       <ScrollArea className="h-32">
                         <pre className="text-sm whitespace-pre-wrap">
-                          <code>{table.sql}</code>
+                          <code>{table.schema?.sql}</code>
                         </pre>
                       </ScrollArea>
                     </div>
                   ) : (
                     <>
                       {/* System Fields - Collapsible */}
-                      {columns.filter((col) => isSystemColumn(col.name)).length > 0 && (
+                      {columns.filter((col) => isSystemColumn(col)).length > 0 && (
                         <Collapsible
                           open={!systemFieldsCollapsed}
                           onOpenChange={(open) => setSystemFieldsCollapsed(!open)}
@@ -189,7 +197,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                           <CollapsibleTrigger asChild>
                             <Button variant="ghost" className="w-full justify-between p-2 mb-4">
                               <span className="text-sm font-medium">
-                                System Fields ({columns.filter((col) => isSystemColumn(col.name)).length})
+                                System Fields ({columns.filter((col) => isSystemColumn(col)).length})
                               </span>
                               <ChevronDown
                                 className={`h-4 w-4 transition-transform ${systemFieldsCollapsed ? "" : "rotate-180"}`}
@@ -198,7 +206,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                           </CollapsibleTrigger>
                           <CollapsibleContent className="space-y-4 mb-6">
                             {columns.map((column, index) => {
-                              const isSystem = isSystemColumn(column.name)
+                              const isSystem = isSystemColumn(column)
                               if (!isSystem) return null
                               return (
                                 <div key={index} className="border rounded-lg bg-muted/50">
@@ -262,8 +270,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                         <input
                                           type="checkbox"
                                           id={`required-${index}`}
-                                          checked={!column.nullable}
-                                          onChange={(e) => updateColumn(index, "nullable", !e.target.checked)}
+                                          checked={column.required}
+                                          onChange={(e) => updateColumn(index, "required", e.target.checked)}
                                           disabled={isSystem}
                                           className="rounded"
                                         />
@@ -313,6 +321,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                             <Label className="text-sm font-medium mb-2 block">Default Value</Label>
                                             <Input
                                               placeholder="Default value"
+                                              value={column.defaultValue || ""}
+                                              onChange={(e) => updateColumn(index, "defaultValue", e.target.value)}
                                               disabled={isSystem}
                                               className={isSystem ? "bg-muted" : ""}
                                             />
@@ -322,15 +332,55 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                             <Input
                                               type="number"
                                               placeholder="Max length"
+                                              value={column.maxValue || ""}
+                                              onChange={(e) => updateColumn(index, "maxValue", e.target.value)}
+                                              disabled={isSystem}
+                                              className={isSystem ? "bg-muted" : ""}
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium mb-2 block">Min Length</Label>
+                                            <Input
+                                              type="number"
+                                              placeholder="Min length"
+                                              value={column.minValue || ""}
+                                              onChange={(e) => updateColumn(index, "minValue", e.target.value)}
+                                              disabled={isSystem}
+                                              className={isSystem ? "bg-muted" : ""}
+                                            />
+                                          </div>
+                                          <div>
+                                            <Label className="text-sm font-medium mb-2 block">
+                                              Auto Generate Pattern
+                                            </Label>
+                                            <Input
+                                              placeholder="Auto Generate Pattern"
+                                              value={column.autoGeneratePattern || ""}
+                                              onChange={(e) =>
+                                                updateColumn(index, "autoGeneratePattern", e.target.value)
+                                              }
                                               disabled={isSystem}
                                               className={isSystem ? "bg-muted" : ""}
                                             />
                                           </div>
                                         </div>
                                         <div>
+                                          <Label className="text-sm font-medium mb-2 block">Validator</Label>
+                                          <Textarea
+                                            placeholder="Column validator"
+                                            value={column.validator || ""}
+                                            onChange={(e) => updateColumn(index, "validator", e.target.value)}
+                                            disabled={isSystem}
+                                            className={isSystem ? "bg-muted" : ""}
+                                            rows={2}
+                                          />
+                                        </div>
+                                        <div>
                                           <Label className="text-sm font-medium mb-2 block">Description</Label>
                                           <Textarea
                                             placeholder="Column description"
+                                            value={column.description || ""}
+                                            onChange={(e) => updateColumn(index, "description", e.target.value)}
                                             disabled={isSystem}
                                             className={isSystem ? "bg-muted" : ""}
                                             rows={2}
@@ -364,7 +414,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                       {/* Regular Fields */}
                       <div className="space-y-4">
                         {columns.map((column, index) => {
-                          const isSystem = isSystemColumn(column.name)
+                          const isSystem = isSystemColumn(column)
                           if (isSystem) return null // Skip system fields as they're in collapsible section
                           return (
                             <div key={index} className="border rounded-lg">
@@ -428,8 +478,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                     <input
                                       type="checkbox"
                                       id={`required-${index}`}
-                                      checked={!column.nullable}
-                                      onChange={(e) => updateColumn(index, "nullable", !e.target.checked)}
+                                      checked={column.required}
+                                      onChange={(e) => updateColumn(index, "required", e.target.checked)}
                                       disabled={isSystem}
                                       className="rounded"
                                     />
@@ -479,6 +529,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                         <Label className="text-sm font-medium mb-2 block">Default Value</Label>
                                         <Input
                                           placeholder="Default value"
+                                          value={column.defaultValue || ""}
+                                          onChange={(e) => updateColumn(index, "defaultValue", e.target.value)}
                                           disabled={isSystem}
                                           className={isSystem ? "bg-muted" : ""}
                                         />
@@ -488,15 +540,51 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                                         <Input
                                           type="number"
                                           placeholder="Max length"
+                                          value={column.maxValue || ""}
+                                          onChange={(e) => updateColumn(index, "maxValue", e.target.value)}
+                                          disabled={isSystem}
+                                          className={isSystem ? "bg-muted" : ""}
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium mb-2 block">Min Length</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="Min length"
+                                          value={column.minValue || ""}
+                                          onChange={(e) => updateColumn(index, "minValue", e.target.value)}
+                                          disabled={isSystem}
+                                          className={isSystem ? "bg-muted" : ""}
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="text-sm font-medium mb-2 block">Auto Generate Pattern</Label>
+                                        <Input
+                                          placeholder="Auto Generate Pattern"
+                                          value={column.autoGeneratePattern || ""}
+                                          onChange={(e) => updateColumn(index, "autoGeneratePattern", e.target.value)}
                                           disabled={isSystem}
                                           className={isSystem ? "bg-muted" : ""}
                                         />
                                       </div>
                                     </div>
                                     <div>
+                                      <Label className="text-sm font-medium mb-2 block">Validator</Label>
+                                      <Textarea
+                                        placeholder="Column validator"
+                                        value={column.validator || ""}
+                                        onChange={(e) => updateColumn(index, "validator", e.target.value)}
+                                        disabled={isSystem}
+                                        className={isSystem ? "bg-muted" : ""}
+                                        rows={2}
+                                      />
+                                    </div>
+                                    <div>
                                       <Label className="text-sm font-medium mb-2 block">Description</Label>
                                       <Textarea
                                         placeholder="Column description"
+                                        value={column.description || ""}
+                                        onChange={(e) => updateColumn(index, "description", e.target.value)}
                                         disabled={isSystem}
                                         className={isSystem ? "bg-muted" : ""}
                                         rows={2}
@@ -550,8 +638,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                         <Textarea
                           id="list-rule"
                           placeholder='e.g., "True", "auth.id != None", ""'
-                          value={rules.list}
-                          onChange={(e) => setRules({ ...rules, list: e.target.value })}
+                          value={rules.listRule}
+                          onChange={(e) => setRules({ ...rules, listRule: e.target.value })}
                           className="mt-2"
                           rows={3}
                         />
@@ -565,8 +653,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                         <Textarea
                           id="get-rule"
                           placeholder='e.g., "True", "auth.id == record.user_id"'
-                          value={rules.get}
-                          onChange={(e) => setRules({ ...rules, get: e.target.value })}
+                          value={rules.getRule}
+                          onChange={(e) => setRules({ ...rules, getRule: e.target.value })}
                           className="mt-2"
                           rows={3}
                         />
@@ -582,8 +670,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="add-rule"
                               placeholder='e.g., "auth.id != None", "auth.role == "admin""'
-                              value={rules.add}
-                              onChange={(e) => setRules({ ...rules, add: e.target.value })}
+                              value={rules.addRule}
+                              onChange={(e) => setRules({ ...rules, addRule: e.target.value })}
                               className="mt-2"
                               rows={3}
                             />
@@ -597,8 +685,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="update-rule"
                               placeholder='e.g., "auth.id == record.user_id", ""'
-                              value={rules.update}
-                              onChange={(e) => setRules({ ...rules, update: e.target.value })}
+                              value={rules.updateRule}
+                              onChange={(e) => setRules({ ...rules, updateRule: e.target.value })}
                               className="mt-2"
                               rows={3}
                             />
@@ -612,8 +700,8 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="delete-rule"
                               placeholder='e.g., "auth.role == "admin"", ""'
-                              value={rules.delete}
-                              onChange={(e) => setRules({ ...rules, delete: e.target.value })}
+                              value={rules.deleteRule}
+                              onChange={(e) => setRules({ ...rules, deleteRule: e.target.value })}
                               className="mt-2"
                               rows={3}
                             />

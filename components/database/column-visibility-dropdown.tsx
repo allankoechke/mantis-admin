@@ -28,7 +28,7 @@ export function ColumnVisibilityDropdown({ table, visibleColumns, onVisibilityCh
   }
 
   const showAll = () => {
-    onVisibilityChange(table.fields?.map((field) => field.name) || [])
+    onVisibilityChange(table.schema.fields?.map((field) => field.name) || [])
   }
 
   const hideAll = () => {
@@ -58,7 +58,7 @@ export function ColumnVisibilityDropdown({ table, visibleColumns, onVisibilityCh
           </Button>
         </div>
         <DropdownMenuSeparator />
-        {table.fields?.map((field) => (
+        {table.schema.fields?.map((field) => (
           <DropdownMenuCheckboxItem
             key={field.name}
             checked={visibleColumns.includes(field.name)}
