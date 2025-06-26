@@ -31,7 +31,9 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   const [docsOpen, setDocsOpen] = React.useState(false)
   const [editingItem, setEditingItem] = React.useState<any>(null)
   const [selectedItems, setSelectedItems] = React.useState<string[]>([])
-  const [visibleColumns, setVisibleColumns] = React.useState<string[]>(table.fields?.map((field) => field.name) || [])
+  const [visibleColumns, setVisibleColumns] = React.useState<string[]>(
+    table.schema.fields?.map((field) => field.name) || [],
+  )
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [filterTerm, setFilterTerm] = React.useState("")
   const [appliedFilter, setAppliedFilter] = React.useState("")
@@ -41,8 +43,8 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   }, [currentPage, appliedFilter])
 
   React.useEffect(() => {
-    setVisibleColumns(table.fields?.map((field) => field.name) || [])
-  }, [table.fields])
+    setVisibleColumns(table.schema.fields?.map((field) => field.name) || [])
+  }, [table.schema.fields])
 
   const loadTableData = async () => {
     setIsLoading(true)
@@ -52,7 +54,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
         const id = `${currentPage}-${i + 1}`
         const baseData: any = { id }
 
-        table.fields?.forEach((field) => {
+        table.schema.fields?.forEach((field) => {
           if (field.name === "id") return
           if (field.name === "created" || field.name === "updated") {
             baseData[field.name] = new Date().toISOString()
@@ -149,7 +151,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
     }
   }
 
-  const filteredFields = table.fields?.filter((field) => visibleColumns.includes(field.name)) || []
+  const filteredFields = table.schema.fields?.filter((field) => visibleColumns.includes(field.name)) || []
 
   return (
     <div className="space-y-6">

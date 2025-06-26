@@ -2,65 +2,288 @@
 
 import type { AppMode } from "./app-state"
 
-// Mock data for testing
-const mockTables = [
+// Updated interfaces to match the API response format
+export interface TableField {
+  autoGeneratePattern: string | null
+  defaultValue: string | null
+  maxValue: number | null
+  minValue: number | null
+  name: string
+  primaryKey: boolean
+  required: boolean
+  system: boolean
+  type: string
+  unique: boolean
+  validator: string | null
+}
+
+export interface TableSchema {
+  addRule: string
+  deleteRule: string
+  fields: TableField[]
+  getRule: string
+  has_api: boolean
+  id: string
+  listRule: string
+  name: string
+  system: boolean
+  type: "base" | "auth" | "view"
+  updateRule: string
+  sql?: string
+}
+
+export interface TableMetadata {
+  created: string
+  has_api: boolean
+  id: string
+  name: string
+  schema: TableSchema
+  type: "base" | "auth" | "view"
+  updated: string
+}
+
+export interface Admin {
+  id: string
+  email: string
+  created: string
+  updated: string
+}
+
+export interface AppSettings {
+  appName: string
+  baseUrl: string
+  version: string
+  maintenanceMode: boolean
+  maxFileSize: string
+  allowRegistration: boolean
+  emailVerificationRequired: boolean
+  sessionTimeout: number
+  mode: AppMode
+}
+
+// Mock data updated to match new format
+const mockTables: TableMetadata[] = [
   {
-    id: "1",
+    created: "2025-06-21 22:04:15",
+    has_api: true,
+    id: "mt_11699830787864871553",
     name: "users",
-    type: "auth" as const,
-    created: "2024-01-15T10:00:00Z",
-    updated: "2024-01-15T10:00:00Z",
-    rules: {
-      list: "auth.id != None",
-      get: "auth.id == record.id",
-      add: "True",
-      update: "auth.id == record.id",
-      delete: "auth.role == 'admin'",
+    schema: {
+      addRule: "",
+      deleteRule: "",
+      fields: [
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: null,
+          name: "id",
+          primaryKey: true,
+          required: true,
+          system: true,
+          type: "string",
+          unique: false,
+          validator: null,
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: null,
+          name: "created",
+          primaryKey: false,
+          required: true,
+          system: true,
+          type: "date",
+          unique: false,
+          validator: null,
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: null,
+          name: "updated",
+          primaryKey: false,
+          required: true,
+          system: true,
+          type: "date",
+          unique: false,
+          validator: null,
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: 5.0,
+          name: "email",
+          primaryKey: false,
+          required: true,
+          system: true,
+          type: "string",
+          unique: true,
+          validator: "email",
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: 8.0,
+          name: "password",
+          primaryKey: false,
+          required: true,
+          system: true,
+          type: "string",
+          unique: false,
+          validator: "password",
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: 2.0,
+          name: "name",
+          primaryKey: false,
+          required: true,
+          system: true,
+          type: "string",
+          unique: false,
+          validator: null,
+        },
+      ],
+      getRule: "",
+      has_api: true,
+      id: "mt_11699830787864871553",
+      listRule: "",
+      name: "users",
+      system: false,
+      type: "auth",
+      updateRule: "",
     },
-    fields: [
-      { name: "id", type: "string", primaryKey: true, nullable: false },
-      { name: "email", type: "string", primaryKey: false, nullable: false },
-      { name: "password", type: "string", primaryKey: false, nullable: false },
-      { name: "created", type: "datetime", primaryKey: false, nullable: false },
-      { name: "updated", type: "datetime", primaryKey: false, nullable: false },
-    ],
+    type: "auth",
+    updated: "2025-06-21 22:04:15",
   },
   {
-    id: "2",
+    created: "2025-06-20 10:00:00",
+    has_api: true,
+    id: "mt_22699830787864871554",
     name: "products",
-    type: "base" as const,
-    created: "2024-01-20T10:00:00Z",
-    updated: "2024-01-20T10:00:00Z",
-    rules: {
-      list: "True",
-      get: "True",
-      add: "auth.id != None",
-      update: "auth.id != None",
-      delete: "auth.role == 'admin'",
+    schema: {
+      addRule: "auth.id != None",
+      deleteRule: "auth.role == 'admin'",
+      fields: [
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: null,
+          name: "id",
+          primaryKey: true,
+          required: true,
+          system: true,
+          type: "string",
+          unique: false,
+          validator: null,
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: null,
+          name: "created",
+          primaryKey: false,
+          required: true,
+          system: true,
+          type: "date",
+          unique: false,
+          validator: null,
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: null,
+          name: "updated",
+          primaryKey: false,
+          required: true,
+          system: true,
+          type: "date",
+          unique: false,
+          validator: null,
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: 1.0,
+          name: "name",
+          primaryKey: false,
+          required: true,
+          system: false,
+          type: "string",
+          unique: false,
+          validator: null,
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: 999999.0,
+          minValue: 0.0,
+          name: "price",
+          primaryKey: false,
+          required: true,
+          system: false,
+          type: "float64",
+          unique: false,
+          validator: null,
+        },
+        {
+          autoGeneratePattern: null,
+          defaultValue: null,
+          maxValue: null,
+          minValue: null,
+          name: "category",
+          primaryKey: false,
+          required: false,
+          system: false,
+          type: "string",
+          unique: false,
+          validator: null,
+        },
+      ],
+      getRule: "True",
+      has_api: true,
+      id: "mt_22699830787864871554",
+      listRule: "True",
+      name: "products",
+      system: false,
+      type: "base",
+      updateRule: "auth.id != None",
     },
-    fields: [
-      { name: "id", type: "string", primaryKey: true, nullable: false },
-      { name: "name", type: "string", primaryKey: false, nullable: false },
-      { name: "price", type: "double", primaryKey: false, nullable: false },
-      { name: "category", type: "string", primaryKey: false, nullable: true },
-      { name: "created", type: "datetime", primaryKey: false, nullable: false },
-      { name: "updated", type: "datetime", primaryKey: false, nullable: false },
-    ],
+    type: "base",
+    updated: "2025-06-20 10:00:00",
   },
   {
-    id: "3",
+    created: "2025-06-19 15:30:00",
+    has_api: true,
+    id: "mt_33699830787864871555",
     name: "active_users_view",
-    type: "view" as const,
-    created: "2024-02-01T10:00:00Z",
-    updated: "2024-02-01T10:00:00Z",
-    rules: {
-      list: "auth.role == 'admin'",
-      get: "auth.role == 'admin'",
-      add: "",
-      update: "",
-      delete: "",
+    schema: {
+      addRule: "",
+      deleteRule: "",
+      fields: [],
+      getRule: "auth.role == 'admin'",
+      has_api: true,
+      id: "mt_33699830787864871555",
+      listRule: "auth.role == 'admin'",
+      name: "active_users_view",
+      system: false,
+      type: "view",
+      updateRule: "",
+      sql: "SELECT id, email, created FROM users WHERE updated > NOW() - INTERVAL 30 DAY",
     },
-    sql: "SELECT id, email, created FROM users WHERE updated > NOW() - INTERVAL 30 DAY",
+    type: "view",
+    updated: "2025-06-19 15:30:00",
   },
 ]
 
@@ -100,49 +323,6 @@ interface ApiResponse<T> {
 
 // Simulate API delay
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
-
-export interface TableMetadata {
-  id: string
-  name: string
-  type: "base" | "auth" | "view"
-  created: string
-  updated: string
-  rules: {
-    list: string
-    get: string
-    add: string
-    update: string
-    delete: string
-  }
-  fields?: Array<{
-    name: string
-    type: string
-    primaryKey: boolean
-    nullable: boolean
-    unique?: boolean
-    isFile?: boolean
-  }>
-  sql?: string
-}
-
-export interface Admin {
-  id: string
-  email: string
-  created: string
-  updated: string
-}
-
-export interface AppSettings {
-  appName: string
-  baseUrl: string
-  version: string
-  maintenanceMode: boolean
-  maxFileSize: string
-  allowRegistration: boolean
-  emailVerificationRequired: boolean
-  sessionTimeout: number
-  mode: AppMode
-}
 
 export class ApiClient {
   private token: string
@@ -215,10 +395,26 @@ export class ApiClient {
       if (method === "POST") {
         const body = JSON.parse(options.body as string)
         const newTable: TableMetadata = {
-          id: String(mockTables.length + 1),
-          ...body,
-          created: new Date().toISOString(),
-          updated: new Date().toISOString(),
+          id: `mt_${Date.now()}${Math.floor(Math.random() * 1000)}`,
+          name: body.name,
+          type: body.type,
+          has_api: true,
+          created: new Date().toISOString().replace("T", " ").slice(0, 19),
+          updated: new Date().toISOString().replace("T", " ").slice(0, 19),
+          schema: {
+            id: `mt_${Date.now()}${Math.floor(Math.random() * 1000)}`,
+            name: body.name,
+            type: body.type,
+            system: false,
+            has_api: true,
+            fields: body.fields || [],
+            addRule: body.addRule || "",
+            deleteRule: body.deleteRule || "",
+            getRule: body.getRule || "",
+            listRule: body.listRule || "",
+            updateRule: body.updateRule || "",
+            sql: body.sql,
+          },
         }
         mockTables.push(newTable)
         return { data: newTable as T, status: 201 }
@@ -233,8 +429,12 @@ export class ApiClient {
         const body = JSON.parse(options.body as string)
         mockTables[tableIndex] = {
           ...mockTables[tableIndex],
-          ...body,
-          updated: new Date().toISOString(),
+          updated: new Date().toISOString().replace("T", " ").slice(0, 19),
+          schema: {
+            ...mockTables[tableIndex].schema,
+            ...body,
+            fields: body.fields || mockTables[tableIndex].schema.fields,
+          },
         }
         return { data: mockTables[tableIndex] as T, status: 200 }
       }
