@@ -78,8 +78,8 @@ const mockAdmins = [
 ]
 
 const mockSettings = {
-  appName: "Admin Dashboard",
-  baseUrl: "https://api.example.com",
+  appName: "Mantis Project",
+  baseUrl: "http://127.0.0.1:8080",
   version: "1.2.3",
   maintenanceMode: false,
   maxFileSize: "10MB",
@@ -260,29 +260,29 @@ export class ApiClient {
 
   async call<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
-      // In production, this would be a real fetch call:
-      // const response = await fetch(endpoint, {
-      //   ...options,
-      //   headers: {
-      //     ...options.headers,
-      //     Authorization: `Bearer ${this.token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // })
-      //
-      // if (response.status === 401) {
-      //   this.onUnauthorized()
-      //   throw new Error('Unauthorized')
-      // }
-      //
-      // if (!response.ok) {
-      //   throw new Error(`API call failed: ${response.statusText}`)
-      // }
-      //
-      // return response.json()
+      const response = await fetch(endpoint, {
+        ...options,
+        headers: {
+          ...options.headers,
+          Authorization: `Bearer ${this.token}`,
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (response.status === 401 || response.status === 403) {
+        console.log("Unauthorized: Error 403")
+        this.onUnauthorized()
+        throw new Error('Unauthorized')
+      }
+      
+      if (!response.ok) {
+        console.log(`API call failed: ${response.statusText}`)
+        throw new Error(`API call failed: ${response.statusText}`)
+      }
 
-      // For now, use mock API
-      return this.mockApiCall<T>(endpoint, options)
+      const res = await response.json()
+      console.log("Response: ", res)      
+      return res as T;
     } catch (error: any) {
       console.error("API call failed:", error)
       this.onError?.(error.message, "error")
@@ -291,17 +291,17 @@ export class ApiClient {
   }
 }
 
-export async function loginWithPassword(email: string, password: string) {
-  // Simulate network delay
-  await delay(500)
+export async function fetchTables(apiClient: ApiClient): Promise<TableMetadata[]> {
+  const tables = await apiClient.call("http://127.0.0.1:7070/api/v1/tables")
+  return tables.data;
+}
 
-  // Mock login - in production this would be a real API call
-  if (email === "admin@example.com" && password === "password") {
-    return {
-      token: "mock-jwt-token-" + Date.now(),
-      user: mockAdmins[0],
-    }
-  }
+export async function fetchAdmins(apiClient: ApiClient): Promise<Admin[]> {
+  const admins = await apiClient.call("http://127.0.0.1:7070/api/v1/admins")
+  return admins.data;
+}
 
-  throw new Error("Invalid credentials")
+export async function fetchSettings(apiClient: ApiClient): Promise<AppSettings> {
+  // return await apiClient.call("http://127.0.0.1:7070/api/v1/settings")
+  return mockSettings;
 }

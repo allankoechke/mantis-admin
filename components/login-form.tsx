@@ -8,15 +8,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { loginWithPassword } from "@/lib/api"
+// import { loginWithPassword } from "@/lib/api"
 
 interface LoginFormProps {
   onLogin: (token: string) => void
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
-  const [email, setEmail] = React.useState("admin@example.com")
-  const [password, setPassword] = React.useState("password")
+  const [email, setEmail] = React.useState("admin@mantis.app")
+  const [password, setPassword] = React.useState("123123123")
   const [showPassword, setShowPassword] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState("")
@@ -27,9 +27,24 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setError("")
 
     try {
-      const data = await loginWithPassword(email, password)
+      console.log("Logging in to admin dashboard ...");
+      const response = await fetch("http://127.0.0.1:7070/api/v1/admins/auth-with-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Invalid credentials")
+      }
+
+      const data = await response.json()
+      console.log(JSON.stringify(data))
+      console.log(data.token)
       localStorage.setItem("admin_token", data.token)
-      onLogin(data.token)
+      onLogin(data.data.token)
     } catch (err) {
       setError("Invalid email or password")
     } finally {
@@ -93,12 +108,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
-
-            <div className="text-sm text-muted-foreground text-center">
-              <p>Demo credentials:</p>
-              <p>Email: admin@example.com</p>
-              <p>Password: password</p>
-            </div>
           </form>
         </CardContent>
       </Card>

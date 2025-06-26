@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
-import { ApiClient, type TableMetadata, type Admin, type AppSettings } from "@/lib/api"
+import { ApiClient, type TableMetadata, type Admin, type AppSettings, fetchAdmins, fetchSettings, fetchTables } from "@/lib/api"
 import { DatabaseSection } from "./database/database-section"
 import { AdminsSection } from "./admins/admins-section"
 import { SettingsSection } from "./settings/settings-section"
@@ -60,9 +60,9 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     try {
       setLoading(true)
       const [tablesData, adminsData, settingsData] = await Promise.all([
-        apiClient.call<TableMetadata[]>("/api/v1/tables"),
-        apiClient.call<Admin[]>("/api/v1/admins"),
-        apiClient.call<AppSettings>("/api/v1/settings"),
+        fetchTables(apiClient),
+        fetchAdmins(apiClient),
+        fetchSettings(apiClient),
       ])
 
       setTables(tablesData)
@@ -159,7 +159,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
               )}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="https://docs.example.com" target="_blank" rel="noopener noreferrer">
+                  <a href="https://docs.mantis.app" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />
                     <span>Documentation</span>
                   </a>

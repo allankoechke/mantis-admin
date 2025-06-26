@@ -153,7 +153,7 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Fields:</span>
-                  <span className="font-medium">{table.fields?.length || 0}</span>
+                  <span className="font-medium">{table.schema?.fields?.length || 0}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Created:</span>
