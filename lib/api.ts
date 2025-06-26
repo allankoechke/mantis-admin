@@ -1,5 +1,7 @@
 "use client"
 
+import type { AppMode } from "./app-state"
+
 // Mock data for testing
 const mockTables = [
   {
@@ -78,7 +80,7 @@ const mockAdmins = [
 ]
 
 const mockSettings = {
-  appName: "Admin Dashboard",
+  appName: "Mantis Admin",
   baseUrl: "https://api.example.com",
   version: "1.2.3",
   maintenanceMode: false,
@@ -86,6 +88,14 @@ const mockSettings = {
   allowRegistration: true,
   emailVerificationRequired: false,
   sessionTimeout: 3600,
+  mode: "TEST" as AppMode,
+}
+
+// API Response interface
+interface ApiResponse<T> {
+  data: T
+  error?: string
+  status: number
 }
 
 // Simulate API delay
@@ -131,6 +141,7 @@ export interface AppSettings {
   allowRegistration: boolean
   emailVerificationRequired: boolean
   sessionTimeout: number
+  mode: AppMode
 }
 
 export class ApiClient {
@@ -139,22 +150,32 @@ export class ApiClient {
   private onError?: (error: string, type?: "error" | "warning") => void
   private requestCount = 0
   private maxRequests = 100
+  private mode: AppMode
+  private baseUrl: string
 
   constructor(
     token: string,
     onUnauthorized: () => void,
+    mode: AppMode = "TEST",
+    baseUrl = "https://api.example.com",
     onError?: (error: string, type?: "error" | "warning") => void,
   ) {
     this.token = token
     this.onUnauthorized = onUnauthorized
     this.onError = onError
+    this.mode = mode
+    this.baseUrl = baseUrl
   }
 
-  private async mockApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async mockApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     // Prevent infinite loops
     this.requestCount++
     if (this.requestCount > this.maxRequests) {
-      throw new Error("Too many API requests - possible infinite loop detected")
+      return {
+        data: null as T,
+        error: "Too many API requests - possible infinite loop detected",
+        status: 500,
+      }
     }
 
     // Reset counter after a delay
@@ -167,15 +188,20 @@ export class ApiClient {
 
     // Simulate occasional errors for testing (reduced frequency)
     if (Math.random() < 0.02) {
-      const error = "Network error occurred"
-      throw new Error(error)
+      return {
+        data: null as T,
+        error: "Network error occurred",
+        status: 500,
+      }
     }
 
     // Simulate 401 for invalid tokens (uncomment to test)
     if (Math.random() < 0.01) {
-      const error = new Error("Unauthorized - Session expired")
-      ;(error as any).status = 401
-      throw error
+      return {
+        data: null as T,
+        error: "Unauthorized - Session expired",
+        status: 403,
+      }
     }
 
     const method = options.method || "GET"
@@ -184,7 +210,7 @@ export class ApiClient {
     // Mock API responses
     if (url.pathname === "/api/v1/tables") {
       if (method === "GET") {
-        return mockTables as T
+        return { data: mockTables as T, status: 200 }
       }
       if (method === "POST") {
         const body = JSON.parse(options.body as string)
@@ -195,7 +221,7 @@ export class ApiClient {
           updated: new Date().toISOString(),
         }
         mockTables.push(newTable)
-        return newTable as T
+        return { data: newTable as T, status: 201 }
       }
     }
 
@@ -210,18 +236,18 @@ export class ApiClient {
           ...body,
           updated: new Date().toISOString(),
         }
-        return mockTables[tableIndex] as T
+        return { data: mockTables[tableIndex] as T, status: 200 }
       }
 
       if (method === "DELETE" && tableIndex !== -1) {
         mockTables.splice(tableIndex, 1)
-        return { success: true } as T
+        return { data: null as T, status: 204 }
       }
     }
 
     if (url.pathname === "/api/v1/admins") {
       if (method === "GET") {
-        return mockAdmins as T
+        return { data: mockAdmins as T, status: 200 }
       }
     }
 
@@ -235,25 +261,25 @@ export class ApiClient {
           ...mockAdmins[adminIndex],
           updated: new Date().toISOString(),
         }
-        return mockAdmins[adminIndex] as T
+        return { data: mockAdmins[adminIndex] as T, status: 200 }
       }
 
       if (method === "DELETE" && adminIndex !== -1) {
         mockAdmins.splice(adminIndex, 1)
-        return { success: true } as T
+        return { data: null as T, status: 204 }
       }
     }
 
     if (url.pathname === "/api/v1/settings") {
       if (method === "GET") {
         console.log("Returning mock settings:", mockSettings)
-        return mockSettings as T
+        return { data: mockSettings as T, status: 200 }
       }
       if (method === "PATCH") {
         const body = JSON.parse(options.body as string)
         Object.assign(mockSettings, body)
         console.log("Updated mock settings:", mockSettings)
-        return mockSettings as T
+        return { data: mockSettings as T, status: 200 }
       }
     }
 
@@ -262,20 +288,106 @@ export class ApiClient {
         const body = JSON.parse(options.body as string)
         if (body.email === "admin@example.com" && body.password === "password") {
           return {
-            token: "mock-jwt-token-" + Date.now(),
-            user: mockAdmins[0],
-          } as T
+            data: {
+              token: "mock-jwt-token-" + Date.now(),
+              user: mockAdmins[0],
+            } as T,
+            status: 200,
+          }
         }
-        throw new Error("Invalid credentials")
+        return {
+          data: null as T,
+          error: "Invalid credentials",
+          status: 403,
+        }
       }
     }
 
-    throw new Error(`Mock API: Unhandled ${method} ${endpoint}`)
+    return {
+      data: null as T,
+      error: `Mock API: Unhandled ${method} ${endpoint}`,
+      status: 404,
+    }
+  }
+
+  private async realApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    try {
+      const url = `${this.baseUrl}${endpoint}`
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.token}`,
+        ...options.headers,
+      }
+
+      const response = await fetch(url, {
+        ...options,
+        headers,
+      })
+
+      // Handle different status codes
+      if (response.status === 204) {
+        return { data: null as T, status: 204 }
+      }
+
+      const responseData = await response.json()
+
+      // Check if response follows our API structure
+      if (responseData.hasOwnProperty("data") && responseData.hasOwnProperty("status")) {
+        return responseData as ApiResponse<T>
+      }
+
+      // If response doesn't follow our structure, wrap it
+      if (response.ok) {
+        return {
+          data: responseData as T,
+          status: response.status,
+        }
+      } else {
+        return {
+          data: null as T,
+          error: responseData.message || responseData.error || "Request failed",
+          status: response.status,
+        }
+      }
+    } catch (error: any) {
+      return {
+        data: null as T,
+        error: error.message || "Network error occurred",
+        status: 500,
+      }
+    }
   }
 
   async call<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
-      return await this.mockApiCall<T>(endpoint, options)
+      let response: ApiResponse<T>
+
+      if (this.mode === "TEST") {
+        response = await this.mockApiCall<T>(endpoint, options)
+      } else {
+        response = await this.realApiCall<T>(endpoint, options)
+      }
+
+      // Handle error responses
+      if (response.error || response.status >= 400) {
+        const error = new Error(response.error || "Request failed")
+        ;(error as any).status = response.status
+
+        // Handle auth errors specifically
+        if (response.status === 401 || response.status === 403) {
+          this.onUnauthorized()
+          throw error
+        }
+
+        // Only call onError for non-auth errors to prevent loops
+        if (this.onError && response.status !== 401 && response.status !== 403) {
+          this.onError(response.error || "Request failed", "error")
+        }
+
+        throw error
+      }
+
+      return response.data
     } catch (error: any) {
       console.error("API call failed:", error)
 
@@ -293,19 +405,59 @@ export class ApiClient {
       throw error
     }
   }
-}
 
-export async function loginWithPassword(email: string, password: string) {
-  // Simulate network delay
-  await delay(500)
-
-  // Mock login - in production this would be a real API call
-  if (email === "admin@example.com" && password === "password") {
-    return {
-      token: "mock-jwt-token-" + Date.now(),
-      user: mockAdmins[0],
+  // Method to update mode
+  updateMode(mode: AppMode, baseUrl?: string) {
+    this.mode = mode
+    if (baseUrl) {
+      this.baseUrl = baseUrl
     }
   }
+}
 
-  throw new Error("Invalid credentials")
+export async function loginWithPassword(
+  email: string,
+  password: string,
+  mode: AppMode = "TEST",
+  baseUrl = "https://api.example.com",
+) {
+  if (mode === "TEST") {
+    // Simulate network delay
+    await delay(500)
+
+    // Mock login - in production this would be a real API call
+    if (email === "admin@example.com" && password === "password") {
+      return {
+        token: "mock-jwt-token-" + Date.now(),
+        user: mockAdmins[0],
+      }
+    }
+
+    throw new Error("Invalid credentials")
+  } else {
+    // Real API call
+    try {
+      const response = await fetch(`${baseUrl}/api/v1/admins/auth-with-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const responseData = await response.json()
+
+      if (response.ok) {
+        // Check if response follows our API structure
+        if (responseData.data) {
+          return responseData.data
+        }
+        return responseData
+      } else {
+        throw new Error(responseData.error || responseData.message || "Login failed")
+      }
+    } catch (error: any) {
+      throw new Error(error.message || "Network error occurred")
+    }
+  }
 }

@@ -33,6 +33,7 @@ import { SyncSection } from "./sync/sync-section"
 import { useToast } from "@/hooks/use-toast"
 import { ThemeToggle } from "./theme-toggle"
 import { useRouter } from "@/lib/router"
+import { useAppState, type AppMode } from "@/lib/app-state"
 
 interface AdminDashboardProps {
   token: string
@@ -48,6 +49,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const [authErrorDialog, setAuthErrorDialog] = React.useState(false)
   const { toast } = useToast()
   const { route, navigate } = useRouter()
+  const { mode } = useAppState()
 
   const showError = React.useCallback(
     (error: string, type: "error" | "warning" = "error") => {
@@ -77,15 +79,20 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     }
   }, [])
 
-  const apiClient = React.useMemo(
-    () => new ApiClient(token, handleUnauthorized, showError),
-    [token, handleUnauthorized, showError],
+  const [apiClient, setApiClient] = React.useState(
+    () => new ApiClient(token, handleUnauthorized, mode, settings?.baseUrl, showError),
   )
 
   React.useEffect(() => {
     setMounted(true)
     loadData()
   }, [])
+
+  // Update API client when mode or settings change
+  React.useEffect(() => {
+    const newApiClient = new ApiClient(token, handleUnauthorized, mode, settings?.baseUrl, showError)
+    setApiClient(newApiClient)
+  }, [mode, settings?.baseUrl, token, handleUnauthorized, showError])
 
   const loadData = async () => {
     try {
@@ -107,7 +114,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
       console.error("Failed to load data:", error)
       // Set default settings if loading fails
       setSettings({
-        appName: "Admin Dashboard",
+        appName: "Mantis Admin",
         baseUrl: "https://api.example.com",
         version: "1.2.3",
         maintenanceMode: false,
@@ -115,6 +122,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
         allowRegistration: true,
         emailVerificationRequired: false,
         sessionTimeout: 3600,
+        mode: mode,
       })
     } finally {
       setLoading(false)
@@ -137,6 +145,15 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     } catch (error) {
       console.warn("Failed to handle auth error login:", error)
     }
+  }
+
+  const handleModeChange = (newMode: AppMode, baseUrl?: string) => {
+    // Update API client with new mode and base URL
+    const newApiClient = new ApiClient(token, handleUnauthorized, newMode, baseUrl, showError)
+    setApiClient(newApiClient)
+
+    // Reload data with new mode
+    loadData()
   }
 
   const sidebarItems = [
@@ -203,7 +220,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
           <SidebarHeader>
             <div className="flex items-center gap-2 px-4 py-2">
               <Shield className="h-6 w-6" />
-              <span className="font-semibold">Admin Dashboard</span>
+              <span className="font-semibold">Mantis Admin</span>
             </div>
           </SidebarHeader>
           <SidebarContent>
@@ -281,7 +298,12 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
                 {currentSection === "logs" && <LogsSection />}
                 {currentSection === "sync" && <SyncSection />}
                 {currentSection === "settings" && (
-                  <SettingsSection apiClient={apiClient} settings={settings} onSettingsUpdate={setSettings} />
+                  <SettingsSection
+                    apiClient={apiClient}
+                    settings={settings}
+                    onSettingsUpdate={setSettings}
+                    onModeChange={handleModeChange}
+                  />
                 )}
               </>
             )}

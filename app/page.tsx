@@ -5,6 +5,7 @@ import { LoginForm } from "@/components/login-form"
 import { AdminDashboard } from "@/components/admin-dashboard"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AppStateProvider } from "@/lib/app-state"
 import { useRouter } from "@/lib/router"
 
 export default function Page() {
@@ -74,12 +75,14 @@ export default function Page() {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      {route.path === "/login" || !token ? (
-        <LoginForm onLogin={handleLogin} />
-      ) : (
-        <AdminDashboard token={token} onLogout={handleLogout} />
-      )}
-      <Toaster />
+      <AppStateProvider>
+        {route.path === "/login" || !token ? (
+          <LoginForm onLogin={handleLogin} />
+        ) : (
+          <AdminDashboard token={token} onLogout={handleLogout} />
+        )}
+        <Toaster />
+      </AppStateProvider>
     </ThemeProvider>
   )
 }

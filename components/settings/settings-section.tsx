@@ -1,24 +1,28 @@
 "use client"
 
 import * as React from "react"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw, TestTube, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { Badge } from "@/components/ui/badge"
 import type { ApiClient, AppSettings } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { useAppState, type AppMode } from "@/lib/app-state"
 
 interface SettingsSectionProps {
   apiClient: ApiClient
   settings: AppSettings | null
   onSettingsUpdate: (settings: AppSettings) => void
+  onModeChange: (mode: AppMode, baseUrl?: string) => void
 }
 
-export function SettingsSection({ apiClient, settings, onSettingsUpdate }: SettingsSectionProps) {
+export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeChange }: SettingsSectionProps) {
   const { toast } = useToast()
+  const { mode, setMode } = useAppState()
   const [formData, setFormData] = React.useState<AppSettings | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const [hasChanges, setHasChanges] = React.useState(false)
@@ -27,10 +31,10 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
   React.useEffect(() => {
     if (settings) {
       console.log("Settings received:", settings)
-      setFormData({ ...settings })
+      setFormData({ ...settings, mode })
       setHasChanges(false)
     }
-  }, [settings])
+  }, [settings, mode])
 
   const handleInputChange = (field: keyof AppSettings, value: any) => {
     if (!formData) return
@@ -40,6 +44,18 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
       [field]: value,
     })
     setHasChanges(true)
+  }
+
+  const handleModeToggle = (newMode: AppMode) => {
+    setMode(newMode)
+    if (formData) {
+      setFormData({
+        ...formData,
+        mode: newMode,
+      })
+      setHasChanges(true)
+    }
+    onModeChange(newMode, formData?.baseUrl)
   }
 
   const handleSave = async () => {
@@ -53,6 +69,11 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
       })
       onSettingsUpdate(updatedSettings)
       setHasChanges(false)
+
+      toast({
+        title: "Settings Saved",
+        description: "Application settings have been updated successfully.",
+      })
     } catch (error) {
       console.error("Failed to update settings:", error)
     } finally {
@@ -94,10 +115,82 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
             <p className="text-muted-foreground">Configure global application settings</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Badge variant={mode === "TEST" ? "secondary" : "default"} className="flex items-center gap-1">
+            {mode === "TEST" ? <TestTube className="h-3 w-3" /> : <Globe className="h-3 w-3" />}
+            {mode} MODE
+          </Badge>
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </div>
+
+      {/* Environment Mode Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Environment Mode</CardTitle>
+          <CardDescription>Switch between test mode (mock data) and production mode (real API calls)</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card
+              className={`cursor-pointer transition-all ${mode === "TEST" ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
+              onClick={() => handleModeToggle("TEST")}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <TestTube className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <h4 className="font-medium">Test Mode</h4>
+                    <p className="text-sm text-muted-foreground">Uses mock data for development</p>
+                  </div>
+                  {mode === "TEST" && (
+                    <Badge variant="default" className="ml-auto">
+                      Active
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card
+              className={`cursor-pointer transition-all ${mode === "PROD" ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
+              onClick={() => handleModeToggle("PROD")}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-green-600" />
+                  <div>
+                    <h4 className="font-medium">Production Mode</h4>
+                    <p className="text-sm text-muted-foreground">Makes real API calls</p>
+                  </div>
+                  {mode === "PROD" && (
+                    <Badge variant="default" className="ml-auto">
+                      Active
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {mode === "PROD" && (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Globe className="h-4 w-4 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Production Mode Active</p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    All API calls will be made to the configured base URL. Ensure your API server is running and
+                    accessible.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -132,7 +225,10 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
               onChange={(e) => handleInputChange("baseUrl", e.target.value)}
               placeholder="https://your-api-domain.com"
             />
-            <p className="text-sm text-muted-foreground mt-1">The base URL for your API endpoints</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              The base URL for your API endpoints{" "}
+              {mode === "PROD" ? "(used in production mode)" : "(not used in test mode)"}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -220,7 +316,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
                 toast({
                   title: "Warning",
                   description: "This is a test warning message. Please pay attention to this.",
-                  variant: "default", // warnings use default variant with warning styling
+                  variant: "default",
                 })
               }}
               className="w-full"
@@ -287,7 +383,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
           variant="outline"
           onClick={() => {
             if (settings) {
-              setFormData({ ...settings })
+              setFormData({ ...settings, mode })
               setHasChanges(false)
             }
           }}

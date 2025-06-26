@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { loginWithPassword } from "@/lib/api"
+import { useAppState } from "@/lib/app-state"
 
 interface LoginFormProps {
   onLogin: (token: string) => void
@@ -20,6 +21,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
   const [showPassword, setShowPassword] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState("")
+  const { mode } = useAppState()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,11 +29,11 @@ export function LoginForm({ onLogin }: LoginFormProps) {
     setError("")
 
     try {
-      const data = await loginWithPassword(email, password)
+      const data = await loginWithPassword(email, password, mode)
       localStorage.setItem("admin_token", data.token)
       onLogin(data.token)
-    } catch (err) {
-      setError("Invalid email or password")
+    } catch (err: any) {
+      setError(err.message || "Invalid email or password")
     } finally {
       setIsLoading(false)
     }
@@ -44,7 +46,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
           <div className="flex justify-center mb-4">
             <Shield className="h-12 w-12 text-primary" />
           </div>
-          <CardTitle className="text-2xl">Admin Login</CardTitle>
+          <CardTitle className="text-2xl">Mantis Admin</CardTitle>
           <CardDescription>Sign in to access the admin dashboard</CardDescription>
         </CardHeader>
         <CardContent>
@@ -98,6 +100,7 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               <p>Demo credentials:</p>
               <p>Email: admin@example.com</p>
               <p>Password: password</p>
+              <p className="mt-2 text-xs">Mode: {mode}</p>
             </div>
           </form>
         </CardContent>
