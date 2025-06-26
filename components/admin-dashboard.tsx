@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Table, Settings, Shield, LogOut, FileText, RefreshCw, ExternalLink } from "lucide-react"
+import { Table, Settings, Shield, LogOut, FileText, RefreshCw, ExternalLink, AlertTriangle } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,15 @@ import {
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { ApiClient, type TableMetadata, type Admin, type AppSettings } from "@/lib/api"
 import { DatabaseSection } from "./database/database-section"
 import { AdminsSection } from "./admins/admins-section"
@@ -23,6 +32,7 @@ import { LogsSection } from "./logs/logs-section"
 import { SyncSection } from "./sync/sync-section"
 import { useToast } from "@/hooks/use-toast"
 import { ThemeToggle } from "./theme-toggle"
+import { useRouter } from "@/lib/router"
 
 interface AdminDashboardProps {
   token: string
@@ -31,15 +41,21 @@ interface AdminDashboardProps {
 
 export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const [mounted, setMounted] = React.useState(false)
-  const [activeSection, setActiveSection] = React.useState("tables")
   const [tables, setTables] = React.useState<TableMetadata[]>([])
   const [admins, setAdmins] = React.useState<Admin[]>([])
   const [loading, setLoading] = React.useState(true)
-  const { toast } = useToast()
   const [settings, setSettings] = React.useState<AppSettings | null>(null)
+  const [authErrorDialog, setAuthErrorDialog] = React.useState(false)
+  const { toast } = useToast()
+  const { route, navigate } = useRouter()
 
   const showError = React.useCallback(
     (error: string, type: "error" | "warning" = "error") => {
+      // Prevent error loops by checking if error is already being shown
+      if (error.includes("Unauthorized") || error.includes("auth")) {
+        return // Don't show toast for auth errors, handle with dialog
+      }
+
       toast({
         variant: type === "error" ? "destructive" : "default",
         title: type === "error" ? "Error" : "Warning",
@@ -49,7 +65,14 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     [toast],
   )
 
-  const apiClient = React.useMemo(() => new ApiClient(token, onLogout, showError), [token, onLogout, showError])
+  const handleUnauthorized = React.useCallback(() => {
+    setAuthErrorDialog(true)
+  }, [])
+
+  const apiClient = React.useMemo(
+    () => new ApiClient(token, handleUnauthorized, showError),
+    [token, handleUnauthorized, showError],
+  )
 
   React.useEffect(() => {
     setMounted(true)
@@ -80,33 +103,45 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     onLogout()
   }
 
+  const handleAuthErrorLogin = () => {
+    setAuthErrorDialog(false)
+    handleLogout()
+  }
+
   const sidebarItems = [
     {
       title: "Tables",
       icon: Table,
       id: "tables",
+      path: "/tables",
     },
     {
       title: "Admins",
       icon: Shield,
       id: "admins",
+      path: "/admins",
     },
     {
       title: "Logs",
       icon: FileText,
       id: "logs",
+      path: "/logs",
     },
     {
       title: "Sync",
       icon: RefreshCw,
       id: "sync",
+      path: "/sync",
     },
     {
       title: "Settings",
       icon: Settings,
       id: "settings",
+      path: "/settings",
     },
   ]
+
+  const currentSection = route.path.split("/")[1] || "tables"
 
   if (!mounted) {
     return (
@@ -137,9 +172,9 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
                   {sidebarItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
-                        onClick={() => setActiveSection(item.id)}
-                        isActive={activeSection === item.id}
-                        className={activeSection === item.id ? "bg-accent text-accent-foreground" : ""}
+                        onClick={() => navigate(item.path)}
+                        isActive={currentSection === item.id}
+                        className={currentSection === item.id ? "bg-accent text-accent-foreground" : ""}
                       >
                         <item.icon className="h-4 w-4" />
                         <span>{item.title}</span>
@@ -189,15 +224,15 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
               </div>
             ) : (
               <>
-                {activeSection === "tables" && (
+                {currentSection === "tables" && (
                   <DatabaseSection apiClient={apiClient} tables={tables} onTablesUpdate={setTables} />
                 )}
-                {activeSection === "admins" && (
+                {currentSection === "admins" && (
                   <AdminsSection admins={admins} apiClient={apiClient} onAdminsUpdate={setAdmins} />
                 )}
-                {activeSection === "logs" && <LogsSection />}
-                {activeSection === "sync" && <SyncSection />}
-                {activeSection === "settings" && (
+                {currentSection === "logs" && <LogsSection />}
+                {currentSection === "sync" && <SyncSection />}
+                {currentSection === "settings" && (
                   <SettingsSection apiClient={apiClient} settings={settings} onSettingsUpdate={setSettings} />
                 )}
               </>
@@ -205,6 +240,28 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
           </main>
         </div>
       </div>
+
+      {/* Auth Error Dialog */}
+      <Dialog open={authErrorDialog} onOpenChange={setAuthErrorDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Authentication Error
+            </DialogTitle>
+            <DialogDescription>
+              Your session has expired or you don't have permission to access this resource. Please log in again to
+              continue.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAuthErrorDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAuthErrorLogin}>Login Again</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SidebarProvider>
   )
 }

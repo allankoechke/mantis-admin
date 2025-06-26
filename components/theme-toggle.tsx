@@ -6,7 +6,7 @@ import { useTheme } from "next-themes"
 import { SidebarMenuButton } from "@/components/ui/sidebar"
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -22,10 +22,14 @@ export function ThemeToggle() {
     )
   }
 
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === "dark" ? "light" : "dark")
+  }
+
   return (
-    <SidebarMenuButton onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-      <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>
+    <SidebarMenuButton onClick={toggleTheme}>
+      {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      <span>{resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}</span>
     </SidebarMenuButton>
   )
 }

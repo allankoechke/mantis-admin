@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -19,6 +20,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
   const [formData, setFormData] = React.useState<AppSettings | null>(null)
   const [isLoading, setIsLoading] = React.useState(false)
   const [hasChanges, setHasChanges] = React.useState(false)
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   React.useEffect(() => {
     if (settings) {
@@ -55,6 +57,18 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
     }
   }
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      const updatedSettings = await apiClient.call<AppSettings>("/api/v1/settings")
+      onSettingsUpdate(updatedSettings)
+    } catch (error) {
+      console.error("Failed to refresh settings:", error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   if (!formData) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -68,12 +82,17 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate }: Setti
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger />
-        <div>
-          <h2 className="text-2xl font-bold">Application Settings</h2>
-          <p className="text-muted-foreground">Configure global application settings</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <SidebarTrigger />
+          <div>
+            <h2 className="text-2xl font-bold">Application Settings</h2>
+            <p className="text-muted-foreground">Configure global application settings</p>
+          </div>
         </div>
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+        </Button>
       </div>
 
       <Card>

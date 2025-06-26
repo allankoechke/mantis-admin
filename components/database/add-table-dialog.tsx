@@ -23,9 +23,10 @@ import type { ApiClient, TableMetadata } from "@/lib/api"
 interface AddTableDialogProps {
   apiClient: ApiClient
   onTablesUpdate: (tables: TableMetadata[]) => void
+  children?: React.ReactNode
 }
 
-export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProps) {
+export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTableDialogProps) {
   const [tableType, setTableType] = React.useState<"base" | "auth" | "view">("base")
   const [tableName, setTableName] = React.useState("")
   const [columns, setColumns] = React.useState<
@@ -144,10 +145,12 @@ export function AddTableDialog({ apiClient, onTablesUpdate }: AddTableDialogProp
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Table
-        </Button>
+        {children || (
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Table
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>

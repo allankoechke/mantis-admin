@@ -137,6 +137,8 @@ export class ApiClient {
   private token: string
   private onUnauthorized: () => void
   private onError?: (error: string, type?: "error" | "warning") => void
+  private requestCount = 0
+  private maxRequests = 100
 
   constructor(
     token: string,
@@ -149,21 +151,32 @@ export class ApiClient {
   }
 
   private async mockApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // Prevent infinite loops
+    this.requestCount++
+    if (this.requestCount > this.maxRequests) {
+      throw new Error("Too many API requests - possible infinite loop detected")
+    }
+
+    // Reset counter after a delay
+    setTimeout(() => {
+      this.requestCount = Math.max(0, this.requestCount - 1)
+    }, 1000)
+
     // Simulate network delay
     await delay(300 + Math.random() * 200)
 
-    // Simulate occasional errors for testing
-    if (Math.random() < 0.05) {
+    // Simulate occasional errors for testing (reduced frequency)
+    if (Math.random() < 0.02) {
       const error = "Network error occurred"
-      this.onError?.(error, "error")
       throw new Error(error)
     }
 
     // Simulate 401 for invalid tokens (uncomment to test)
-    // if (Math.random() < 0.1) {
-    //   this.onUnauthorized()
-    //   throw new Error('Unauthorized')
-    // }
+    if (Math.random() < 0.01) {
+      const error = new Error("Unauthorized - Session expired")
+      ;(error as any).status = 401
+      throw error
+    }
 
     const method = options.method || "GET"
     const url = new URL(endpoint, "http://localhost")
@@ -260,32 +273,21 @@ export class ApiClient {
 
   async call<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
-      // In production, this would be a real fetch call:
-      // const response = await fetch(endpoint, {
-      //   ...options,
-      //   headers: {
-      //     ...options.headers,
-      //     Authorization: `Bearer ${this.token}`,
-      //     'Content-Type': 'application/json',
-      //   },
-      // })
-      //
-      // if (response.status === 401) {
-      //   this.onUnauthorized()
-      //   throw new Error('Unauthorized')
-      // }
-      //
-      // if (!response.ok) {
-      //   throw new Error(`API call failed: ${response.statusText}`)
-      // }
-      //
-      // return response.json()
-
-      // For now, use mock API
-      return this.mockApiCall<T>(endpoint, options)
+      return await this.mockApiCall<T>(endpoint, options)
     } catch (error: any) {
       console.error("API call failed:", error)
-      this.onError?.(error.message, "error")
+
+      // Handle auth errors specifically
+      if (error.status === 401 || error.status === 403 || error.message.includes("Unauthorized")) {
+        this.onUnauthorized()
+        throw error
+      }
+
+      // Only call onError for non-auth errors to prevent loops
+      if (this.onError && !error.message.includes("Unauthorized")) {
+        this.onError(error.message, "error")
+      }
+
       throw error
     }
   }

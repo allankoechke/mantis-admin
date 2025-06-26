@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Table, Eye, Edit, Trash2, MoreHorizontal } from "lucide-react"
+import { Search, Table, Eye, Edit, Trash2, MoreHorizontal, RefreshCw, Plus, ExternalLink } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ import { AddTableDialog } from "./add-table-dialog"
 import { TableDetailView } from "./table-detail-view"
 import { EditSchemaDialog } from "./edit-schema-dialog"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { useRouter } from "@/lib/router"
 
 interface DatabaseSectionProps {
   apiClient: ApiClient
@@ -21,11 +22,13 @@ interface DatabaseSectionProps {
 }
 
 export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseSectionProps) {
-  const [selectedTable, setSelectedTable] = React.useState<string | null>(null)
   const [searchTerm, setSearchTerm] = React.useState("")
   const [editingTable, setEditingTable] = React.useState<TableMetadata | null>(null)
   const [searchExpanded, setSearchExpanded] = React.useState(false)
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const { route, navigate } = useRouter()
 
+  const selectedTableName = route.path.startsWith("/tables/") ? route.path.split("/")[2] : null
   const filteredTables = tables.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
 
   const handleDeleteTable = async (tableId: string) => {
@@ -39,16 +42,28 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   }
 
   const handleTableClick = (tableName: string) => {
-    setSelectedTable(tableName)
+    navigate(`/tables/${tableName}`)
   }
 
-  if (selectedTable) {
-    const tableInfo = tables.find((t) => t.name === selectedTable)
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      const updatedTables = await apiClient.call<TableMetadata[]>("/api/v1/tables")
+      onTablesUpdate(updatedTables)
+    } catch (error) {
+      console.error("Failed to refresh tables:", error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
+  if (selectedTableName) {
+    const tableInfo = tables.find((t) => t.name === selectedTableName)
     if (tableInfo) {
       return (
         <TableDetailView
           table={tableInfo}
-          onBack={() => setSelectedTable(null)}
+          onBack={() => navigate("/tables")}
           apiClient={apiClient}
           onTableUpdate={(updatedTable) => {
             const updatedTables = tables.map((t) => (t.id === updatedTable.id ? updatedTable : t))
@@ -82,88 +97,117 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
           </div>
         </div>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          </Button>
           <AddTableDialog apiClient={apiClient} onTablesUpdate={onTablesUpdate} />
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {filteredTables.map((table) => (
-          <Card
-            key={table.id}
-            className="cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => handleTableClick(table.name)}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                <div className="flex items-center gap-2">
-                  <Table className="h-4 w-4" />
-                  {table.name}
-                  <Badge
-                    variant={table.type === "auth" ? "default" : table.type === "view" ? "secondary" : "outline"}
-                    className="text-xs"
-                  >
-                    {table.type}
-                  </Badge>
+      {tables.length === 0 && !isRefreshing ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <Table className="h-12 w-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Tables Found</h3>
+            <p className="text-muted-foreground text-center mb-6 max-w-md">
+              Get started by creating your first table. Tables are used to store and organize your data.
+            </p>
+            <div className="flex gap-3">
+              <AddTableDialog apiClient={apiClient} onTablesUpdate={onTablesUpdate}>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Table
+                </Button>
+              </AddTableDialog>
+              <Button variant="outline" asChild>
+                <a href="https://docs.example.com/tables" target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  View Documentation
+                </a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredTables.map((table) => (
+            <Card
+              key={table.id}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleTableClick(table.name)}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  <div className="flex items-center gap-2">
+                    <Table className="h-4 w-4" />
+                    {table.name}
+                    <Badge
+                      variant={table.type === "auth" ? "default" : table.type === "view" ? "secondary" : "outline"}
+                      className="text-xs"
+                    >
+                      {table.type}
+                    </Badge>
+                  </div>
+                </CardTitle>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleTableClick(table.name)
+                      }}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setEditingTable(table)
+                      }}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit Schema
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDeleteTable(table.id)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Table
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Type:</span>
+                    <span className="font-medium capitalize">{table.type}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Fields:</span>
+                    <span className="font-medium">{table.fields?.length || 0}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Created:</span>
+                    <span className="font-medium">{new Date(table.created).toLocaleDateString()}</span>
+                  </div>
                 </div>
-              </CardTitle>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setSelectedTable(table.name)
-                    }}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Details
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setEditingTable(table)
-                    }}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit Schema
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDeleteTable(table.id)
-                    }}
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete Table
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Type:</span>
-                  <span className="font-medium capitalize">{table.type}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Fields:</span>
-                  <span className="font-medium">{table.fields?.length || 0}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Created:</span>
-                  <span className="font-medium">{new Date(table.created).toLocaleDateString()}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {editingTable && (
         <EditSchemaDialog
