@@ -54,7 +54,11 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   }
 
   const handleTableClick = (tableName: string) => {
-    navigate(`/tables/${tableName}`)
+    try {
+      navigate(`/tables/${tableName}`)
+    } catch (error) {
+      console.warn("Failed to navigate to table:", error)
+    }
   }
 
   const handleRefresh = async () => {
@@ -75,7 +79,13 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
       return (
         <TableDetailView
           table={tableInfo}
-          onBack={() => navigate("/tables")}
+          onBack={() => {
+            try {
+              navigate("/tables")
+            } catch (error) {
+              console.warn("Failed to navigate back:", error)
+            }
+          }}
           apiClient={apiClient}
           onTableUpdate={(updatedTable) => {
             const updatedTables = tables.map((t) => (t.id === updatedTable.id ? updatedTable : t))

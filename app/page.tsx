@@ -14,34 +14,51 @@ export default function Page() {
 
   React.useEffect(() => {
     setMounted(true)
-    const savedToken = localStorage.getItem("admin_token")
-    if (savedToken) {
-      setToken(savedToken)
+
+    // Get saved token safely
+    try {
+      const savedToken = localStorage.getItem("admin_token")
+      if (savedToken) {
+        setToken(savedToken)
+      }
+    } catch (error) {
+      console.warn("Failed to get saved token:", error)
     }
   }, [])
 
   React.useEffect(() => {
     if (mounted) {
-      // Prevent hash from being used as CSS selector
-      const currentPath = route.path
+      try {
+        const currentPath = route.path
 
-      if (!token && currentPath !== "/login") {
-        navigate("/login")
-      } else if (token && currentPath === "/login") {
-        navigate("/tables")
+        if (!token && currentPath !== "/login") {
+          navigate("/login")
+        } else if (token && currentPath === "/login") {
+          navigate("/tables")
+        }
+      } catch (error) {
+        console.warn("Failed to handle route change:", error)
       }
     }
   }, [token, route.path, mounted, navigate])
 
   const handleLogin = (newToken: string) => {
-    setToken(newToken)
-    navigate("/tables")
+    try {
+      setToken(newToken)
+      navigate("/tables")
+    } catch (error) {
+      console.warn("Failed to handle login:", error)
+    }
   }
 
   const handleLogout = () => {
-    setToken(null)
-    localStorage.removeItem("admin_token")
-    navigate("/login")
+    try {
+      setToken(null)
+      localStorage.removeItem("admin_token")
+      navigate("/login")
+    } catch (error) {
+      console.warn("Failed to handle logout:", error)
+    }
   }
 
   if (!mounted) {

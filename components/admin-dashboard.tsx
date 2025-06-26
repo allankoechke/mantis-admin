@@ -51,22 +51,30 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
 
   const showError = React.useCallback(
     (error: string, type: "error" | "warning" = "error") => {
-      // Prevent error loops by checking if error is already being shown
-      if (error.includes("Unauthorized") || error.includes("auth")) {
-        return // Don't show toast for auth errors, handle with dialog
-      }
+      try {
+        // Prevent error loops by checking if error is already being shown
+        if (error.includes("Unauthorized") || error.includes("auth")) {
+          return // Don't show toast for auth errors, handle with dialog
+        }
 
-      toast({
-        variant: type === "error" ? "destructive" : "default",
-        title: type === "error" ? "Error" : "Warning",
-        description: error,
-      })
+        toast({
+          variant: type === "error" ? "destructive" : "default",
+          title: type === "error" ? "Error" : "Warning",
+          description: error,
+        })
+      } catch (toastError) {
+        console.warn("Failed to show error toast:", toastError)
+      }
     },
     [toast],
   )
 
   const handleUnauthorized = React.useCallback(() => {
-    setAuthErrorDialog(true)
+    try {
+      setAuthErrorDialog(true)
+    } catch (error) {
+      console.warn("Failed to handle unauthorized:", error)
+    }
   }, [])
 
   const apiClient = React.useMemo(
@@ -99,13 +107,21 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   }
 
   const handleLogout = () => {
-    localStorage.removeItem("admin_token")
-    onLogout()
+    try {
+      localStorage.removeItem("admin_token")
+      onLogout()
+    } catch (error) {
+      console.warn("Failed to logout:", error)
+    }
   }
 
   const handleAuthErrorLogin = () => {
-    setAuthErrorDialog(false)
-    handleLogout()
+    try {
+      setAuthErrorDialog(false)
+      handleLogout()
+    } catch (error) {
+      console.warn("Failed to handle auth error login:", error)
+    }
   }
 
   const sidebarItems = [
@@ -183,7 +199,13 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
                   {sidebarItems.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
-                        onClick={() => navigate(item.path)}
+                        onClick={() => {
+                          try {
+                            navigate(item.path)
+                          } catch (error) {
+                            console.warn("Failed to navigate:", error)
+                          }
+                        }}
                         isActive={currentSection === item.id}
                         className={currentSection === item.id ? "bg-accent text-accent-foreground" : ""}
                       >
