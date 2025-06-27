@@ -41,7 +41,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
   React.useEffect(() => {
     if (open) {
       setColumns(table.schema?.fields || [])
-      setRules(table.rules)
+      setRules({addRule: table.schema.addRule, listRule: table.schema.listRule, getRule: table.schema.getRule, updateRule: table.schema.updateRule, deletRule: table.schema.deleteRule})
       setHasUnsavedChanges(false)
       setSystemFieldsCollapsed(true)
     }
@@ -638,7 +638,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                         <Textarea
                           id="list-rule"
                           placeholder='e.g., "True", "auth.id != None", ""'
-                          value={rules.listRule}
+                          value={table.schema.listRule}
                           onChange={(e) => setRules({ ...rules, listRule: e.target.value })}
                           className="mt-2"
                           rows={3}
@@ -653,7 +653,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                         <Textarea
                           id="get-rule"
                           placeholder='e.g., "True", "auth.id == record.user_id"'
-                          value={rules.getRule}
+                          value={table.schema.getRule}
                           onChange={(e) => setRules({ ...rules, getRule: e.target.value })}
                           className="mt-2"
                           rows={3}
@@ -670,7 +670,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="add-rule"
                               placeholder='e.g., "auth.id != None", "auth.role == "admin""'
-                              value={rules.addRule}
+                              value={table.schema.addRule}
                               onChange={(e) => setRules({ ...rules, addRule: e.target.value })}
                               className="mt-2"
                               rows={3}
@@ -685,7 +685,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="update-rule"
                               placeholder='e.g., "auth.id == record.user_id", ""'
-                              value={rules.updateRule}
+                              value={table.schema.updateRule}
                               onChange={(e) => setRules({ ...rules, updateRule: e.target.value })}
                               className="mt-2"
                               rows={3}
@@ -700,7 +700,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="delete-rule"
                               placeholder='e.g., "auth.role == "admin"", ""'
-                              value={rules.deleteRule}
+                              value={table.schema.deleteRule}
                               onChange={(e) => setRules({ ...rules, deleteRule: e.target.value })}
                               className="mt-2"
                               rows={3}

@@ -95,6 +95,19 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   }, [mode, settings?.baseUrl, token, handleUnauthorized, showError])
 
   const loadData = async () => {
+    // Set default settings if loading fails
+    setSettings({
+      appName: "Mantis Admin",
+      baseUrl: "http://127.0.0.1:7070",
+      version: "1.2.3",
+      maintenanceMode: false,
+      maxFileSize: "10MB",
+      allowRegistration: true,
+      emailVerificationRequired: false,
+      sessionTimeout: 3600,
+      mode: mode,
+    })
+
     try {
       setLoading(true)
       console.log("Loading dashboard data...")
@@ -105,25 +118,13 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
         // apiClient.call<AppSettings>("/api/v1/settings"),
       ])
 
-      console.log("Data loaded:", { tablesData, adminsData/*, settingsData */})
+      console.log("Data loaded:", { tablesData, adminsData/*, settingsData */ })
 
       setTables(tablesData)
       setAdmins(adminsData)
       // setSettings(settingsData)
     } catch (error) {
       console.error("Failed to load data:", error)
-      // Set default settings if loading fails
-      setSettings({
-        appName: "Mantis Admin",
-        baseUrl: "http://127.0.0.1:7070",
-        version: "1.2.3",
-        maintenanceMode: false,
-        maxFileSize: "10MB",
-        allowRegistration: true,
-        emailVerificationRequired: false,
-        sessionTimeout: 3600,
-        mode: mode,
-      })
     } finally {
       setLoading(false)
     }

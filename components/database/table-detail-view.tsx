@@ -48,38 +48,12 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
 
   const loadTableData = async () => {
     setIsLoading(true)
+
     try {
-      // Mock table data with pagination and filtering
-      const mockData = Array.from({ length: 5 }, (_, i) => {
-        const id = `${currentPage}-${i + 1}`
-        const baseData: any = { id }
-
-        table.schema.fields?.forEach((field) => {
-          if (field.name === "id") return
-          if (field.name === "created" || field.name === "updated") {
-            baseData[field.name] = new Date().toISOString()
-          } else if (field.name === "email") {
-            baseData[field.name] = `user${id}@example.com`
-          } else if (field.name === "password") {
-            baseData[field.name] = "••••••••"
-          } else {
-            baseData[field.name] = `Sample ${field.name} ${id}`
-          }
-        })
-
-        return baseData
-      })
-
-      // Apply filter if exists
-      let filteredData = mockData
-      if (appliedFilter) {
-        filteredData = mockData.filter((item) =>
-          Object.values(item).some((value) => String(value).toLowerCase().includes(appliedFilter.toLowerCase())),
-        )
-      }
-
-      setTableData(filteredData)
-      setTotalPages(3) // Mock pagination
+      const tableData = await apiClient.call<any>(`/api/v1/${table.name}`)
+      setTableData(tableData)
+      
+      // setTotalPages(3) // Mock pagination
       setSelectedItems([]) // Clear selection on reload
     } catch (error) {
       console.error("Failed to load table data:", error)

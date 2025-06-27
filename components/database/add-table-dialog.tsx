@@ -36,7 +36,6 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
       primaryKey: boolean
       nullable: boolean
       unique?: boolean
-      isFile?: boolean
       isSystem?: boolean
       required?: boolean
     }>
@@ -45,47 +44,67 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
   const [isLoading, setIsLoading] = React.useState(false)
   const [open, setOpen] = React.useState(false)
 
+  // When we open the dialog, reset all input values to default
+  // that way, we ensure we dont start with previous dialog data
+  React.useEffect(() => {
+    if(open) {
+      // Reset all input fields to default values ...
+      setTableName("");
+      setColumns([]);
+      setSqlQuery("");
+      setIsLoading(false);
+    }
+  }, [open])
+
+  // Set expected data types, this should map what the database expects
+  // our column data types to be.
   const dataTypes = [
-    "string",
-    "int8",
-    "int16",
-    "int32",
-    "int64",
-    "float32",
-    "float64",
-    "boolean",
-    "date",
-    "datetime",
-    "timestamp",
-    "json",
     "xml",
-    "text",
-    "varchar",
-    "char",
-    "binary",
-    "uuid",
+    "string",
+    "double",
+    "date",
+    "int8",
+    "uint8",
+    "int16",
+    "uint16",
+    "int32",
+    "uint32",
+    "int64",
+    "uint64",
+    "blob",
+    "json",
+    "bool"
   ]
 
+  // Update the default system columns when we change the table type.
   React.useEffect(() => {
+    // NOTE!!
+    // THESE SYSTEM FIELDS ARE SHOWN HERE JUST FOR CONVINIENCE BUT WONT BE PROCESSED IN THE REQUEST BODY
+    // AS SUCH, CHANGING ANY PARAMETERS WON'T HAVE ANY EFFECT ON THE DB SIDE.
     if (tableType === "base") {
+      // Base types include `id`, `created` and `updated` fields
       setColumns([
         { name: "id", type: "string", primaryKey: true, nullable: false, isSystem: true, required: true },
-        { name: "created", type: "datetime", primaryKey: false, nullable: false, isSystem: true, required: true },
-        { name: "updated", type: "datetime", primaryKey: false, nullable: false, isSystem: true, required: true },
+        { name: "created", type: "date", primaryKey: false, nullable: false, isSystem: true, required: true },
+        { name: "updated", type: "date", primaryKey: false, nullable: false, isSystem: true, required: true },
       ])
     } else if (tableType === "auth") {
+      // Base types include `id`, `created`, `updated`, `email` and `password` fields
       setColumns([
         { name: "id", type: "string", primaryKey: true, nullable: false, isSystem: true, required: true },
         { name: "email", type: "string", primaryKey: false, nullable: false, isSystem: true, required: true },
         { name: "password", type: "string", primaryKey: false, nullable: false, isSystem: true, required: true },
-        { name: "created", type: "datetime", primaryKey: false, nullable: false, isSystem: true, required: true },
-        { name: "updated", type: "datetime", primaryKey: false, nullable: false, isSystem: true, required: true },
+        { name: "created", type: "date", primaryKey: false, nullable: false, isSystem: true, required: true },
+        { name: "updated", type: "date", primaryKey: false, nullable: false, isSystem: true, required: true },
       ])
     } else {
       setColumns([])
     }
   }, [tableType])
 
+  // Add a new column field to the fields array.
+  // By default, the data type is set to `string`. Note also that the `isSystem` field will be ignored, so
+  // don't rely on it.
   const addColumn = () => {
     setColumns([
       ...columns,
@@ -93,6 +112,7 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
     ])
   }
 
+  // Remove an added field from the fields array
   const removeColumn = (index: number) => {
     const column = columns[index]
     if (columns.length > 1 && !column.isSystem) {
@@ -100,11 +120,13 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
     }
   }
 
+  // Update an existing field with new value/option
   const updateColumn = (index: number, field: string, value: any) => {
     const updatedColumns = columns.map((col, i) => (i === index ? { ...col, [field]: value } : col))
     setColumns(updatedColumns)
   }
 
+  // Handle submitting new table to the API
   const handleSubmit = async () => {
     if (!tableName.trim()) return
 
@@ -113,12 +135,12 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
       const tableData: Partial<TableMetadata> = {
         name: tableName,
         type: tableType,
-        rules: {
-          list: "",
-          get: "",
-          add: tableType === "view" ? "" : "",
-          update: tableType === "view" ? "" : "",
-          delete: tableType === "view" ? "" : "",
+        schema: {
+          listRule: "",
+          getRule: "",
+          addRule: tableType === "view" ? "" : "",
+          updateRule: tableType === "view" ? "" : "",
+          deleteRule: tableType === "view" ? "" : ""
         },
       }
 
@@ -132,7 +154,6 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
             primaryKey: col.primaryKey,
             nullable: col.nullable,
             unique: col.unique,
-            isFile: col.isFile,
             system: col.isSystem,
             required: col.required,
           }),
@@ -195,7 +216,7 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
                 <SelectContent>
                   <SelectItem value="base">Base Table</SelectItem>
                   <SelectItem value="auth">Auth Table</SelectItem>
-                  <SelectItem value="view">View</SelectItem>
+                  <SelectItem value="view">View Type</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -306,19 +327,6 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
                         />
                         <Label htmlFor={`required-${index}`} className="text-xs">
                           Required
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`files-${index}`}
-                          checked={column.isFile || false}
-                          onChange={(e) => updateColumn(index, "isFile", e.target.checked)}
-                          disabled={column.isSystem}
-                          className="rounded"
-                        />
-                        <Label htmlFor={`files-${index}`} className="text-xs">
-                          Files
                         </Label>
                       </div>
                     </div>
