@@ -19,6 +19,7 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ApiClient, TableMetadata, TableField } from "@/lib/api"
+import { dataTypes } from "@/lib/constants"
 
 interface AddTableDialogProps {
   apiClient: ApiClient
@@ -56,26 +57,6 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
       addBaseFields();
     }
   }, [open])
-
-  // Set expected data types, this should map what the database expects
-  // our column data types to be.
-  const dataTypes = [
-    "xml",
-    "string",
-    "double",
-    "date",
-    "int8",
-    "uint8",
-    "int16",
-    "uint16",
-    "int32",
-    "uint32",
-    "int64",
-    "uint64",
-    "blob",
-    "json",
-    "bool"
-  ]
 
   function addBaseFields() {
     // NOTE!!

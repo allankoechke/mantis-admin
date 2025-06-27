@@ -16,6 +16,7 @@ interface TableDocsDrawerProps {
   onClose: () => void
 }
 
+// Generate docs based on user defined tables
 export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) {
   const handleClose = () => {
     onClose()
@@ -42,7 +43,7 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
             <div className="p-6 space-y-6">
               <ApiEndpointCard
                 method="GET"
-                endpoint={`/api/v1/tables/${table.name}`}
+                endpoint={`/api/v1/${table.name}`}
                 description={`List all records in the ${table.name} table`}
                 table={table}
                 operation="list"
@@ -50,7 +51,7 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
 
               <ApiEndpointCard
                 method="GET"
-                endpoint={`/api/v1/tables/${table.name}/{id}`}
+                endpoint={`/api/v1/${table.name}/{id}`}
                 description="Get a specific record by ID"
                 table={table}
                 operation="get"
@@ -60,7 +61,7 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
                 <>
                   <ApiEndpointCard
                     method="POST"
-                    endpoint={`/api/v1/tables/${table.name}`}
+                    endpoint={`/api/v1/${table.name}`}
                     description="Create a new record"
                     table={table}
                     operation="create"
@@ -68,7 +69,7 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
 
                   <ApiEndpointCard
                     method="PATCH"
-                    endpoint={`/api/v1/tables/${table.name}/{id}`}
+                    endpoint={`/api/v1/${table.name}/{id}`}
                     description="Update a specific record"
                     table={table}
                     operation="update"
@@ -76,7 +77,7 @@ export function TableDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) 
 
                   <ApiEndpointCard
                     method="DELETE"
-                    endpoint={`/api/v1/tables/${table.name}/{id}`}
+                    endpoint={`/api/v1/${table.name}/{id}`}
                     description="Delete a specific record"
                     table={table}
                     operation="delete"

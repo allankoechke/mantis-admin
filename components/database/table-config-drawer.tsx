@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Textarea } from "@/components/ui/textarea"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import type { ApiClient, TableMetadata } from "@/lib/api"
+import { dataTypes } from "@/lib/constants"
 
 interface TableConfigDrawerProps {
   table: TableMetadata
@@ -30,14 +31,33 @@ interface TableConfigDrawerProps {
   onTableUpdate: (table: TableMetadata) => void
 }
 
+// The update structure for tables is a s follows
+/*
+{
+  name: "", // can be different from existing one
+  has_api: <bool>,
+  addRule: "",
+  getRule: "",
+  listRule: "",
+  updateRule: "",
+  deleteRule: "",
+  deletedFields: [], // List of column names to delete
+  fields: [], array of fields, changes to particular fields will be effected, new fields will be created
+}
+*/
+
+// TODO keep track of field names vs new names
+// table is passed in, so pretty workable
+
 export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpdate }: TableConfigDrawerProps) {
   const [columns, setColumns] = React.useState(table.schema?.fields || [])
-  const [rules, setRules] = React.useState(table.rules)
+  const [rules, setRules] = React.useState({})
   const [isLoading, setIsLoading] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("schema")
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false)
   const [systemFieldsCollapsed, setSystemFieldsCollapsed] = React.useState(true)
-
+  const [deletedColumns, setDeletedColumns] = React.useState([]) // Track deleted field names, we'll 
+  
   React.useEffect(() => {
     if (open) {
       setColumns(table.schema?.fields || [])
@@ -47,38 +67,26 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
     }
   }, [open, table])
 
-  const dataTypes = [
-    "string",
-    "int",
-    "bigint",
-    "double",
-    "float",
-    "boolean",
-    "date",
-    "datetime",
-    "timestamp",
-    "json",
-    "xml",
-    "text",
-    "varchar",
-    "char",
-    "binary",
-    "uuid",
-  ]
-
   const addColumn = () => {
-    setColumns([...columns, { name: "", type: "string", primaryKey: false, nullable: true }])
+    setColumns([...columns, { name: "", type: "string", primaryKey: false, required: true }])
     setHasUnsavedChanges(true)
   }
 
+  // Remove existing column by ID
   const removeColumn = (index: number) => {
     const column = columns[index]
     const isSystemColumn = column.system
+    const col_name = column.name
     if (columns.length > 1 && !isSystemColumn) {
+      if(!deletedColumns.includes(col_name)) {
+        // Add the column to the delete array
+        setDeletedColumns([...deletedColumns, col_name]); 
+      }
       setColumns(columns.filter((_, i) => i !== index))
     }
   }
 
+  // Update existing column data
   const updateColumn = (index: number, field: string, value: any) => {
     const updatedColumns = columns.map((col, i) => (i === index ? { ...col, [field]: value } : col))
     setColumns(updatedColumns)
@@ -88,9 +96,12 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
   const handleSaveSchema = async () => {
     setIsLoading(true)
     try {
+      const body = { fields: columns, deletedFields: deletedColumns };
+      console.log(body)
+      // return
       const updatedTable = await apiClient.call<TableMetadata>(`/api/v1/tables/${table.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ schema: { fields: columns } }),
+        body: JSON.stringify({ fields: columns, deletedFields: deletedColumns }),
       })
       onTableUpdate(updatedTable)
     } catch (error) {
@@ -100,19 +111,18 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
     }
   }
 
+  // Update rule changes
   const handleSaveRules = async () => {
     setIsLoading(true)
     try {
       const updatedTable = await apiClient.call<TableMetadata>(`/api/v1/tables/${table.id}`, {
         method: "PATCH",
         body: JSON.stringify({
-          rules: {
-            listRule: rules.listRule,
-            getRule: rules.getRule,
-            addRule: rules.addRule,
-            updateRule: rules.updateRule,
-            deleteRule: rules.deleteRule,
-          },
+          listRule: rules.listRule,
+          getRule: rules.getRule,
+          addRule: rules.addRule,
+          updateRule: rules.updateRule,
+          deleteRule: rules.deleteRule,
         }),
       })
       onTableUpdate(updatedTable)
@@ -131,6 +141,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
     if (hasUnsavedChanges) {
       if (confirm("You have unsaved changes. Are you sure you want to close?")) {
         setHasUnsavedChanges(false)
+        setDeletedColumns([])
         onClose()
       }
     } else {
@@ -638,7 +649,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                         <Textarea
                           id="list-rule"
                           placeholder='e.g., "True", "auth.id != None", ""'
-                          value={table.schema.listRule}
+                          value={rules?.listRule}
                           onChange={(e) => setRules({ ...rules, listRule: e.target.value })}
                           className="mt-2"
                           rows={3}
@@ -653,7 +664,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                         <Textarea
                           id="get-rule"
                           placeholder='e.g., "True", "auth.id == record.user_id"'
-                          value={table.schema.getRule}
+                          value={rules?.getRule}
                           onChange={(e) => setRules({ ...rules, getRule: e.target.value })}
                           className="mt-2"
                           rows={3}
@@ -670,7 +681,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="add-rule"
                               placeholder='e.g., "auth.id != None", "auth.role == "admin""'
-                              value={table.schema.addRule}
+                              value={rules?.addRule}
                               onChange={(e) => setRules({ ...rules, addRule: e.target.value })}
                               className="mt-2"
                               rows={3}
@@ -685,7 +696,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="update-rule"
                               placeholder='e.g., "auth.id == record.user_id", ""'
-                              value={table.schema.updateRule}
+                              value={rules?.updateRule}
                               onChange={(e) => setRules({ ...rules, updateRule: e.target.value })}
                               className="mt-2"
                               rows={3}
@@ -700,7 +711,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
                             <Textarea
                               id="delete-rule"
                               placeholder='e.g., "auth.role == "admin"", ""'
-                              value={table.schema.deleteRule}
+                              value={rules?.deleteRule}
                               onChange={(e) => setRules({ ...rules, deleteRule: e.target.value })}
                               className="mt-2"
                               rows={3}

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ApiClient, TableMetadata } from "@/lib/api"
+import { dataTypes } from "@/lib/constants"
 
 interface EditSchemaDialogProps {
   table: TableMetadata
@@ -28,25 +29,7 @@ interface EditSchemaDialogProps {
 export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: EditSchemaDialogProps) {
   const [columns, setColumns] = React.useState(table.schema.fields || [])
   const [isLoading, setIsLoading] = React.useState(false)
-
-  const dataTypes = [
-    "string",
-    "int",
-    "bigint",
-    "double",
-    "float",
-    "boolean",
-    "date",
-    "datetime",
-    "timestamp",
-    "json",
-    "xml",
-    "text",
-    "varchar",
-    "char",
-    "binary",
-    "uuid",
-  ]
+  const [deletedColumns, setDeletedColumns] = React.useState([])
 
   const addColumn = () => {
     setColumns([...columns, { name: "", type: "string", primaryKey: false, required: false, system: false }])
@@ -55,6 +38,7 @@ export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: E
   const removeColumn = (index: number) => {
     const column = columns[index]
     if (columns.length > 1 && !column.system) {
+      setDeletedColumns([...deletedColumns, column.name]); // Add the column to the delete array
       setColumns(columns.filter((_, i) => i !== index))
     }
   }
@@ -64,12 +48,27 @@ export function EditSchemaDialog({ table, apiClient, onClose, onTableUpdate }: E
     setColumns(updatedColumns)
   }
 
+  // The update structure for tables is a s follows
+  /*
+  {
+    name: "", // can be different from existing one
+    has_api: <bool>,
+    addRule: "",
+    getRule: "",
+    listRule: "",
+    updateRule: "",
+    deleteRule: "",
+    deletedFields: [], // List of column names to delete
+    fields: [], array of fields, changes to particular fields will be effected, new fields will be created
+  }
+  */
+
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
       const updatedTable = await apiClient.call<TableMetadata>(`/api/v1/tables/${table.id}`, {
         method: "PATCH",
-        body: JSON.stringify({ schema: { fields: columns } }),
+        body: JSON.stringify({  fields: columns, deletedColumns  }),
       })
       onTableUpdate(updatedTable)
     } catch (error) {

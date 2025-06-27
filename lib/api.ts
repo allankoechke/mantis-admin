@@ -9,6 +9,7 @@ export interface TableField {
   maxValue: number | null
   minValue: number | null
   name: string
+  new_name: string | null
   primaryKey: boolean
   required: boolean
   system: boolean
