@@ -50,9 +50,10 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
     if(open) {
       // Reset all input fields to default values ...
       setTableName("");
-      setColumns([]);
       setSqlQuery("");
       setIsLoading(false);
+      setTableType("base");
+      addBaseFields();
     }
   }, [open])
 
@@ -76,8 +77,7 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
     "bool"
   ]
 
-  // Update the default system columns when we change the table type.
-  React.useEffect(() => {
+  function addBaseFields() {
     // NOTE!!
     // THESE SYSTEM FIELDS ARE SHOWN HERE JUST FOR CONVINIENCE BUT WONT BE PROCESSED IN THE REQUEST BODY
     // AS SUCH, CHANGING ANY PARAMETERS WON'T HAVE ANY EFFECT ON THE DB SIDE.
@@ -100,6 +100,11 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
     } else {
       setColumns([])
     }
+  }
+
+  // Update the default system columns when we change the table type.
+  React.useEffect(() => {
+    addBaseFields();
   }, [tableType])
 
   // Add a new column field to the fields array.
