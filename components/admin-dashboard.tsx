@@ -47,6 +47,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const [loading, setLoading] = React.useState(true)
   const [settings, setSettings] = React.useState<AppSettings | null>(null)
   const [authErrorDialog, setAuthErrorDialog] = React.useState(false)
+  const [authErrorReason, setAuthErrorReason] = React.useState("") // Auth error reason
   const { toast } = useToast()
   const { route, navigate } = useRouter()
   const { mode } = useAppState()
@@ -71,9 +72,10 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     [toast],
   )
 
-  const handleUnauthorized = React.useCallback(() => {
+  const handleUnauthorized = React.useCallback((reason: string) => {
     try {
-      setAuthErrorDialog(true)
+      setAuthErrorReason(reason)  // Set the auth error string
+      setAuthErrorDialog(true)    // Set the auth dialog to open
     } catch (error) {
       console.warn("Failed to handle unauthorized:", error)
     }
@@ -110,7 +112,6 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
 
     try {
       setLoading(true)
-      console.log("Loading dashboard data...")
 
       const [tablesData, adminsData/*, settingsData*/] = await Promise.all([
         apiClient.call<TableMetadata[]>("/api/v1/tables"),
@@ -324,6 +325,13 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
               Your session has expired or you don't have permission to access this resource. Please log in again to
               continue.
             </DialogDescription>
+            {
+            authErrorReason.length > 0 && (
+              <DialogDescription>
+                {authErrorReason}
+              </DialogDescription>
+            )
+            }
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAuthErrorDialog(false)}>

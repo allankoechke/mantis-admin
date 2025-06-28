@@ -83,7 +83,7 @@ interface ApiResponse<T> {
 
 export class ApiClient {
   private token: string
-  private onUnauthorized: () => void
+  private onUnauthorized: (error: string) => void
   private onError?: (error: string, type?: "error" | "warning") => void
   private requestCount = 0
   private maxRequests = 100
@@ -92,7 +92,7 @@ export class ApiClient {
 
   constructor(
     token: string,
-    onUnauthorized: () => void,
+    onUnauthorized: (reason?: string | "") => void,
     mode: AppMode = "PROD",
     baseUrl = "http://127.0.0.1:7070",
     onError?: (error: string, type?: "error" | "warning") => void,
@@ -113,43 +113,29 @@ export class ApiClient {
         ...options.headers,
       }
 
-      console.log(headers, this.baseUrl)
-
       const response = await fetch(url, {
         ...options,
         headers,
       })
 
-      // Handle different status codes
-      if (response.status === 204) {
-        return { data: null as T, status: 204 }
-      }
-
       const responseData = await response.json()
 
-      // Check if response follows our API structure
-      if (responseData.hasOwnProperty("data") && responseData.hasOwnProperty("status")) {
-        return responseData as ApiResponse<T>
+      // DELETE or No Content
+      if (response.status === 204) {
+        return { data: null as T, status: 204, error: "" }
       }
 
-      // If response doesn't follow our structure, wrap it
-      if (response.ok) {
-        return {
-          data: responseData as T,
-          status: response.status,
-        }
-      } else {
-        return {
-          data: null as T,
-          error: responseData.message || responseData.error || "Request failed",
-          status: response.status,
-        }
+      // Ensure the structure always matches ApiResponse<T>
+      return {
+        data: responseData.data ?? null,
+        error: responseData.error ?? "",
+        status: response.status,
       }
     } catch (error: any) {
       return {
         data: null as T,
         error: error.message || "Network error occurred",
-        status: 500,
+        status: 500, // could use 500 if you prefer
       }
     }
   }
@@ -158,43 +144,26 @@ export class ApiClient {
     try {
       console.log(endpoint)
       let response: ApiResponse<T> = await this.realApiCall<T>(endpoint, options)
-      console.log(response)
 
-      // Handle error responses
-      if (response.error || response.status >= 400) {
-        const error = new Error(response.error || "Request failed")
-          ; (error as any).status = response.status
+      // Unauthorized handling
+      if (response.status === 401 || response.status === 403) {
+        this.onUnauthorized(response.error || "Unauthorized")
+        throw new Error(response.error || "Unauthorized")
+      }
 
-        // Handle auth errors specifically
-        if (response.status === 401 || response.status === 403) {
-          this.onUnauthorized()
-          throw error
-        }
-
-        // Only call onError for non-auth errors to prevent loops
-        if (this.onError && response.status !== 401 && response.status !== 403) {
-          this.onError(response.error || "Request failed", "error")
-        }
-
-        throw error
+      // General error handling
+      if (response.status >= 400 || response.status <= 0 || response.error) {
+        this.onError?.(response.error || "Request failed", "error")
+        throw new Error(response.error || "Request failed")
       }
 
       return response.data
     } catch (error: any) {
-      console.error("API call failed:", error)
-
-      // Handle auth errors specifically
-      if (error.status === 401 || error.status === 403 || error.message.includes("Unauthorized")) {
-        this.onUnauthorized()
-        throw error
-      }
-
-      // Only call onError for non-auth errors to prevent loops
-      if (this.onError && !error.message.includes("Unauthorized")) {
-        this.onError(error.message, "error")
-      }
-
-      throw error
+      return {
+        data: null as T,
+        error: error.message || "Could not connect to the server!",
+        status: 500, // could use 500 if you prefer
+      } as T
     }
   }
 
@@ -217,9 +186,7 @@ export async function loginWithPassword(
   try {
     const response = await fetch(`${baseUrl}/api/v1/admins/auth-with-password`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json", },
       body: JSON.stringify({ email, password }),
     })
 

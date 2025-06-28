@@ -16,12 +16,12 @@ export function AppStateProvider({ children }: { children: React.ReactNode }) {
     if (typeof window !== "undefined") {
       try {
         const savedMode = localStorage.getItem("app_mode")
-        return (savedMode as AppMode) || "TEST"
+        return (savedMode as AppMode) || "PROD"
       } catch {
-        return "TEST"
+        return "PROD"
       }
     }
-    return "TEST"
+    return "PROD"
   })
 
   const updateMode = React.useCallback((newMode: AppMode) => {
