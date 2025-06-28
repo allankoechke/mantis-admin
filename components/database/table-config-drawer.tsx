@@ -46,29 +46,28 @@ interface TableConfigDrawerProps {
 }
 */
 
-// TODO keep track of field names vs new names
-// table is passed in, so pretty workable
-
+// NOTE: We don't support changing of field names yet!
 export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpdate }: TableConfigDrawerProps) {
-  const [columns, setColumns] = React.useState(table.schema?.fields || [])
+  const [columns, setColumns] = React.useState([])
   const [rules, setRules] = React.useState({})
   const [isLoading, setIsLoading] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("schema")
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false)
   const [systemFieldsCollapsed, setSystemFieldsCollapsed] = React.useState(true)
   const [deletedColumns, setDeletedColumns] = React.useState([]) // Track deleted field names, we'll 
-  
+
   React.useEffect(() => {
     if (open) {
-      setColumns(table.schema?.fields || [])
-      setRules({addRule: table.schema.addRule, listRule: table.schema.listRule, getRule: table.schema.getRule, updateRule: table.schema.updateRule, deletRule: table.schema.deleteRule})
+      setColumns(table.schema?.fields.map(col => ({ ...col, old_name: col.name })) || [])
+      setRules({ addRule: table.schema.addRule, listRule: table.schema.listRule, getRule: table.schema.getRule, updateRule: table.schema.updateRule, deletRule: table.schema.deleteRule })
       setHasUnsavedChanges(false)
       setSystemFieldsCollapsed(true)
+      setDeletedColumns([])
     }
   }, [open, table])
 
   const addColumn = () => {
-    setColumns([...columns, { name: "", type: "string", primaryKey: false, required: true }])
+    setColumns([...columns, { name: "", type: "string", primaryKey: false, required: true, old_name: null }])
     setHasUnsavedChanges(true)
   }
 
@@ -76,19 +75,41 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
   const removeColumn = (index: number) => {
     const column = columns[index]
     const isSystemColumn = column.system
+
+    if (!(columns.length > 1 && !isSystemColumn)) 
+      return
     const col_name = column.name
-    if (columns.length > 1 && !isSystemColumn) {
-      if(!deletedColumns.includes(col_name)) {
-        // Add the column to the delete array
-        setDeletedColumns([...deletedColumns, col_name]); 
-      }
-      setColumns(columns.filter((_, i) => i !== index))
+
+    // Ensure the field we are deleting existed/exists in the table already
+    if (!deletedColumns.includes(col_name) && isAnExistingField(index)) {
+      // Add the column to the delete array
+      setDeletedColumns([...deletedColumns, col_name]);
     }
+    setColumns(columns.filter((_, i) => i !== index))
+  }
+
+  const isAnExistingField = (index: number) => {
+    const col_old_name = columns[index]?.old_name
+    if(!col_old_name) return false;
+    for (const f of table.schema.fields) {
+      if (f.name === col_old_name) return true;
+    }
+
+    return false;
   }
 
   // Update existing column data
   const updateColumn = (index: number, field: string, value: any) => {
-    const updatedColumns = columns.map((col, i) => (i === index ? { ...col, [field]: value } : col))
+    const updatedColumns = columns.map((col, i) => {
+      if (i === index) {
+        var updated = col
+        updated[field] = value
+        return updated;
+      }
+
+      return col
+    })
+
     setColumns(updatedColumns)
     setHasUnsavedChanges(true)
   }
