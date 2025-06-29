@@ -649,12 +649,19 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
                   {table.type !== "view" && (
                     <div className="text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">
-                      <p>
+                      <div>
                         <Badge variant="outline" className="text-xs mr-2">
                           System
                         </Badge>
                         System columns are automatically managed and cannot be modified.
-                      </p>
+                      </div>
+                      <div className="mt-2"></div>
+                      <div>
+                        <Badge variant="outline" className="text-xs mr-2">
+                          Table Type
+                        </Badge>
+                        Once a table is created, we dont support changing table field types.
+                      </div>
                     </div>
                   )}
                 </TabsContent>
