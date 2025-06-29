@@ -13,6 +13,7 @@ import type { ApiClient, TableMetadata } from "@/lib/api"
 import { TableConfigDrawer } from "./table-config-drawer"
 import { TableDocsDrawer } from "./table-docs-drawer"
 import { EditItemDrawer } from "./edit-item-drawer"
+import { AddItemDrawer } from "./add-item-drawer"
 import { ColumnVisibilityDropdown } from "./column-visibility-dropdown"
 
 interface TableDetailViewProps {
@@ -29,6 +30,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   const [isLoading, setIsLoading] = React.useState(false)
   const [configOpen, setConfigOpen] = React.useState(false)
   const [docsOpen, setDocsOpen] = React.useState(false)
+  const [addingItem, setAddingItem] = React.useState<any>(false)
   const [editingItem, setEditingItem] = React.useState<any>(null)
   const [selectedItems, setSelectedItems] = React.useState<string[]>([])
   const [visibleColumns, setVisibleColumns] = React.useState<string[]>(
@@ -64,6 +66,10 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
 
   const handleReload = () => {
     loadTableData()
+  }
+
+  const handleAddItem = () => {
+    setAddingItem(true)
   }
 
   const handleFilter = () => {
@@ -105,6 +111,10 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
     setTableData((prevData) => prevData.map((item) => (item.id === updatedItem.id ? updatedItem : item)))
   }
 
+  const handleItemAdded = (addedItem: any) => {
+    setTableData([...tableData, addedItem])
+  }
+
   const handleDeleteSelected = async () => {
     setIsDeleting(true)
     try {
@@ -144,6 +154,10 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
           <Button variant="outline" size="sm" onClick={handleReload} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
+          <Button onClick={handleAddItem} disabled={isLoading}>
+            <Plus className="h-4 w-4 mr-2" />
+              New Record
+            </Button>
           <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
             <Cog className="h-4 w-4 mr-2" />
             Config
@@ -321,6 +335,16 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
       />
 
       <TableDocsDrawer table={table} open={docsOpen} onClose={() => setDocsOpen(false)} />
+
+      {addingItem && (
+        <AddItemDrawer
+          table={table}
+          apiClient={apiClient}
+          open={!!addingItem}
+          onClose={() => setAddingItem(null)}
+          onItemAdded={handleItemAdded}
+        />
+      )}
 
       {editingItem && (
         <EditItemDrawer

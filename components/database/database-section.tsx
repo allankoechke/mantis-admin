@@ -11,7 +11,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import type { ApiClient, TableMetadata } from "@/lib/api"
 import { AddTableDialog } from "./add-table-dialog"
 import { TableDetailView } from "./table-detail-view"
-import { EditSchemaDialog } from "./edit-schema-dialog"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { useRouter } from "@/lib/router"
 
@@ -189,15 +188,6 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
                       View Details
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setEditingTable(table)
-                      }}
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit Schema
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
                       className="text-destructive"
                       onClick={(e) => {
                         e.stopPropagation()
@@ -229,19 +219,6 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
             </Card>
           ))}
         </div>
-      )}
-
-      {editingTable && (
-        <EditSchemaDialog
-          table={editingTable}
-          apiClient={apiClient}
-          onClose={() => setEditingTable(null)}
-          onTableUpdate={(updatedTable) => {
-            const updatedTables = tables.map((t) => (t.id === updatedTable.id ? updatedTable : t))
-            onTablesUpdate(updatedTables)
-            setEditingTable(null)
-          }}
-        />
       )}
     </div>
   )

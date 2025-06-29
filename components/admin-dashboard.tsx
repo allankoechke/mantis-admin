@@ -72,7 +72,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     [toast],
   )
 
-  const handleUnauthorized = React.useCallback((reason: string) => {
+  const handleUnauthorized = React.useCallback((reason: string | null) => {
     try {
       setAuthErrorReason(reason)  // Set the auth error string
       setAuthErrorDialog(true)    // Set the auth dialog to open

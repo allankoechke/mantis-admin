@@ -118,22 +118,22 @@ export class ApiClient {
         headers,
       })
 
-      const responseData = await response.json()
-
       // DELETE or No Content
       if (response.status === 204) {
-        return { data: null as T, status: 204, error: "" }
+        return { data: {} as T, status: 204, error: "" }
       }
+
+      const responseData = await response.json()
 
       // Ensure the structure always matches ApiResponse<T>
       return {
-        data: responseData.data ?? null,
+        data: responseData.data ?? {},
         error: responseData.error ?? "",
         status: response.status,
       }
     } catch (error: any) {
       return {
-        data: null as T,
+        data: {} as T,
         error: error.message || "Network error occurred",
         status: 500, // could use 500 if you prefer
       }
@@ -142,7 +142,6 @@ export class ApiClient {
 
   async call<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     try {
-      console.log(endpoint)
       let response: ApiResponse<T> = await this.realApiCall<T>(endpoint, options)
 
       // Unauthorized handling
