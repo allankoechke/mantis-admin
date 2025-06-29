@@ -94,7 +94,7 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
   const addColumn = () => {
     setColumns([
       ...columns,
-      { name: "", type: "string", primaryKey: false, nullable: true, isSystem: false, required: false },
+      { name: "", type: "string", primaryKey: false, nullable: false, isSystem: false, required: false },
     ])
   }
 
@@ -219,7 +219,7 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
                 className="min-h-[200px] font-mono"
               />
               <p className="text-sm text-muted-foreground mt-2">
-                Enter the SQL query that defines this view. The query should be valid SQL syntax.
+                Enter the SQL query that defines this view. The query should be valid SQL syntax and should have an `id` field.
               </p>
             </div>
           ) : (

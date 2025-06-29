@@ -29,19 +29,21 @@ interface EditItemDrawerProps {
 export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUpdate }: EditItemDrawerProps) {
   const [formData, setFormData] = React.useState<any>({})
   const [isLoading, setIsLoading] = React.useState(false)
+  const [isViewType, setIsViewIsViewType] = React.useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false)
 
   React.useEffect(() => {
     if (open && item) {
       setFormData({ ...item })
       setHasUnsavedChanges(false)
+      setIsViewIsViewType(table?.type === "view")
     }
   }, [open, item])
 
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
-      const updatedItem = await apiClient.call<any>(`/api/v1/tables/${table.name}/${item.id}`, {
+      const updatedItem = await apiClient.call<any>(`/api/v1/${table.name}/${item.id}`, {
         method: "PATCH",
         body: JSON.stringify(formData),
       })
@@ -62,8 +64,8 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
     setHasUnsavedChanges(true)
   }
 
-  const isSystemField = (field: any) => {
-    return field.system === true
+  const isSystemGeneratedField = (field: any) => {
+    return field.system && ["id", "created", "updated"].includes(field.name)
   }
 
   const handleClose = () => {
@@ -100,7 +102,7 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
                 <div key={field.name} className="space-y-2">
                   <Label htmlFor={field.name} className="text-sm font-medium capitalize">
                     {field.name}
-                    {!field.nullable && <span className="text-red-500 ml-1">*</span>}
+                    {!field.required && <span className="text-red-500 ml-1">*</span>}
                   </Label>
                   <Input
                     id={field.name}
@@ -113,12 +115,15 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
                     }
                     value={formData[field.name] || ""}
                     onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                    disabled={isSystemField(field)}
-                    className={`w-full ${isSystemField(field) ? "bg-muted" : ""}`}
+                    disabled={isSystemGeneratedField(field)}
+                    className={`w-full ${isSystemGeneratedField(field) ? "bg-muted" : ""}`}
                     placeholder={`Enter ${field.name}`}
                   />
-                  {isSystemField(field) && (
-                    <p className="text-xs text-muted-foreground">System field - cannot be modified</p>
+                  {isSystemGeneratedField(field) && (
+                    <p className="text-xs text-muted-foreground">System generated field - cannot be modified</p>
+                  )}
+                  {(table.type === "auth" && field.name === "password") && (
+                    <p className="text-xs text-muted-foreground">Password fields are redacted in API responses.</p>
                   )}
                 </div>
               ))}
@@ -127,14 +132,23 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
         </div>
 
         <DrawerFooter>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleClose} className="flex-1">
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={isLoading} className="flex-1">
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
+          {/* Do not allow editing view types */}
+          {isViewType && (
+            <p className="text-xs text-muted-foreground">View tables cannot be modified from here!</p>
+          )}
+
+          {/* For non view types, allow making data changes */}
+          {!isViewType && (
+            <div className="flex gap-3">
+              <Button variant="outline" onClick={handleClose} className="flex-1">
+                Cancel
+              </Button>
+              <Button onClick={handleSubmit} disabled={isLoading || isViewType} className="flex-1">
+                {isLoading ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
+          )
+          }
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

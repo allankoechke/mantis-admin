@@ -28,6 +28,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   const [currentPage, setCurrentPage] = React.useState(1)
   const [totalPages, setTotalPages] = React.useState(1)
   const [isLoading, setIsLoading] = React.useState(false)
+  const [isViewType, setIsViewType] = React.useState(false)
   const [configOpen, setConfigOpen] = React.useState(false)
   const [docsOpen, setDocsOpen] = React.useState(false)
   const [addingItem, setAddingItem] = React.useState<any>(false)
@@ -45,6 +46,10 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   }, [currentPage, appliedFilter])
 
   React.useEffect(() => {
+    setIsViewType(table.type === "view")
+  }, [table.type])
+
+  React.useEffect(() => {
     setVisibleColumns(table.schema.fields?.map((field) => field.name) || [])
   }, [table.schema.fields])
 
@@ -54,7 +59,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
     try {
       const tableData = await apiClient.call<any>(`/api/v1/${table.name}`)
       setTableData(tableData)
-      
+
       // setTotalPages(3) // Mock pagination
       setSelectedItems([]) // Clear selection on reload
     } catch (error) {
@@ -69,6 +74,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   }
 
   const handleAddItem = () => {
+    if (isViewType) return
     setAddingItem(true)
   }
 
@@ -154,10 +160,12 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
           <Button variant="outline" size="sm" onClick={handleReload} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
-          <Button onClick={handleAddItem} disabled={isLoading}>
-            <Plus className="h-4 w-4 mr-2" />
+          {!isViewType &&
+            <Button onClick={handleAddItem} disabled={isLoading}>
+              <Plus className="h-4 w-4 mr-2" />
               New Record
             </Button>
+          }
           <Button variant="outline" size="sm" onClick={() => setConfigOpen(true)}>
             <Cog className="h-4 w-4 mr-2" />
             Config
@@ -235,15 +243,15 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
                 This table doesn't have any records yet. Add some data to get started.
               </p>
               <div className="flex gap-3">
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Record
-                </Button>
-                <Button variant="outline" asChild>
-                  <a href="https://docs.example.com/records" target="_blank" rel="noopener noreferrer">
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    View Documentation
-                  </a>
+                {!isViewType &&
+                  <Button onClick={handleAddItem} disabled={isDeleting || isLoading}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Record
+                  </Button>
+                }
+                <Button variant="outline" onClick={() => setDocsOpen(true)} disabled={isDeleting}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  View API Documentation
                 </Button>
               </div>
             </div>

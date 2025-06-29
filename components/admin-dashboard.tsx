@@ -326,11 +326,11 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
               continue.
             </DialogDescription>
             {
-            authErrorReason.length > 0 && (
-              <DialogDescription>
-                {authErrorReason}
-              </DialogDescription>
-            )
+              authErrorReason.length > 0 && (
+                <DialogDescription>
+                  {authErrorReason}
+                </DialogDescription>
+              )
             }
           </DialogHeader>
           <DialogFooter>
