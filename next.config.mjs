@@ -9,6 +9,12 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  output: 'export',
+  trailingSlash: true, // ensures `/admin/index.html` works
+  basePath: '/admin',
+  assetPrefix: '/admin',
 }
+
+
 
 export default nextConfig
