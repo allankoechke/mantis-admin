@@ -17,6 +17,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { ApiClient, TableMetadata } from "@/lib/api"
 import { Badge } from "../ui/badge"
+import { useToast } from "@/hooks/use-toast"
 
 interface EditItemDrawerProps {
   table: TableMetadata
@@ -32,6 +33,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
   const [isLoading, setIsLoading] = React.useState(false)
   const [isViewType, setIsViewIsViewType] = React.useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false)
+  const { toast } = useToast()
 
   React.useEffect(() => {
     if (open) {
@@ -51,6 +53,10 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
       })
       onItemAdded(createdItem)
       onClose()
+      toast({
+        title: "Table Created",
+        description: `A table ${table.name} has been created successfully.`,
+      })
     } catch (error) {
       console.error("Failed to update item:", error)
     } finally {
@@ -67,6 +73,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
   }
 
   const isSystemGeneratedField = (field: any) => {
+    console.log(field.name)
     return field.system && ["id", "created", "updated"].includes(field.name)
   }
 
@@ -113,6 +120,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
                   updated
                 </Badge>
               </div>
+
               {tableFields?.map((field: any) => (
                 <div key={field.name} className="space-y-2">
                   <Label htmlFor={field.name} className="text-sm font-medium capitalize">

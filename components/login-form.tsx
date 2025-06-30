@@ -16,8 +16,8 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onLogin }: LoginFormProps) {
-  const [email, setEmail] = React.useState("admin@example.com")
-  const [password, setPassword] = React.useState("password")
+  const [email, setEmail] = React.useState("")
+  const [password, setPassword] = React.useState("")
   const [showPassword, setShowPassword] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState("")
@@ -96,12 +96,6 @@ export function LoginForm({ onLogin }: LoginFormProps) {
               {isLoading ? "Signing in..." : "Sign In"}
             </Button>
 
-            <div className="text-sm text-muted-foreground text-center">
-              <p>Demo credentials:</p>
-              <p>Email: admin@example.com</p>
-              <p>Password: password</p>
-              <p className="mt-2 text-xs">Mode: {mode}</p>
-            </div>
           </form>
         </CardContent>
       </Card>

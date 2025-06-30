@@ -11,13 +11,13 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import type { TableMetadata } from "@/lib/api"
 
 interface TableDocsDrawerProps {
+  table: TableMetadata
   open: boolean
   onClose: () => void
 }
 
 // Generate docs based on user defined tables
-export function TableDocsDrawer({ open, onClose }: TableDocsDrawerProps) {
-  const [table, setTable] = React.useState({})
+export function TableRecordDocsDrawer({ table, open, onClose }: TableDocsDrawerProps) {
   const handleClose = () => {
     onClose()
   }
@@ -29,7 +29,7 @@ export function TableDocsDrawer({ open, onClose }: TableDocsDrawerProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
-              <DrawerTitle>Tables API Documentation</DrawerTitle>
+              <DrawerTitle>API Documentation - {table.name}</DrawerTitle>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -43,43 +43,47 @@ export function TableDocsDrawer({ open, onClose }: TableDocsDrawerProps) {
             <div className="p-6 space-y-6">
               <ApiEndpointCard
                 method="GET"
-                endpoint={`/api/v1/tables`}
-                description={`List all records in the tables table`}
+                endpoint={`/api/v1/${table.name}`}
+                description={`List all records in the ${table.name} table`}
                 table={table}
                 operation="list"
               />
 
               <ApiEndpointCard
                 method="GET"
-                endpoint={`/api/v1/tables/{id}`}
+                endpoint={`/api/v1/${table.name}/{id}`}
                 description="Get a specific record by ID"
                 table={table}
                 operation="get"
               />
 
-              <ApiEndpointCard
-                method="POST"
-                endpoint={`/api/v1/tables`}
-                description="Create a new record"
-                table={table}
-                operation="create"
-              />
+              {table.schema.type !== "view" && (
+                <>
+                  <ApiEndpointCard
+                    method="POST"
+                    endpoint={`/api/v1/${table.name}`}
+                    description="Create a new record"
+                    table={table}
+                    operation="create"
+                  />
 
-              <ApiEndpointCard
-                method="PATCH"
-                endpoint={`/api/v1/tables/{id}`}
-                description="Update a specific record"
-                table={table}
-                operation="update"
-              />
+                  <ApiEndpointCard
+                    method="PATCH"
+                    endpoint={`/api/v1/${table.name}/{id}`}
+                    description="Update a specific record"
+                    table={table}
+                    operation="update"
+                  />
 
-              <ApiEndpointCard
-                method="DELETE"
-                endpoint={`/api/v1/tables/{id}`}
-                description="Delete a specific record"
-                table={table}
-                operation="delete"
-              />
+                  <ApiEndpointCard
+                    method="DELETE"
+                    endpoint={`/api/v1/${table.name}/{id}`}
+                    description="Delete a specific record"
+                    table={table}
+                    operation="delete"
+                  />
+                </>
+              )}
             </div>
           </ScrollArea>
         </div>
@@ -134,7 +138,7 @@ function ApiEndpointCard({
 
     if (operation === "create" || operation === "update") {
       const sampleData: any = {}
-      table?.schema?.fields?.forEach((field) => {
+      table.schema.fields?.forEach((field) => {
         if (field.name === "id" || field.name === "created" || field.name === "updated") return
         if (field.name === "email") {
           sampleData[field.name] = "user@example.com"
@@ -154,7 +158,7 @@ function ApiEndpointCard({
   const generateResponseExample = () => {
     if (operation === "list") {
       const sampleRecord: any = {}
-      table?.schema?.fields?.forEach((field) => {
+      table.schema.fields?.forEach((field) => {
         if (field.name === "id") {
           sampleRecord[field.name] = "123e4567-e89b-12d3-a456-426614174000"
         } else if (field.name === "created" || field.name === "updated") {
@@ -184,12 +188,12 @@ function ApiEndpointCard({
     }
 
     if (operation === "delete") {
-      return JSON.stringify({}, null, 2)
+      return JSON.stringify({ success: true }, null, 2)
     }
 
     // Single record response
     const sampleRecord: any = {}
-    table?.schema?.fields?.forEach((field) => {
+    table.schema.fields?.forEach((field) => {
       if (field.name === "id") {
         sampleRecord[field.name] = "123e4567-e89b-12d3-a456-426614174000"
       } else if (field.name === "created" || field.name === "updated") {

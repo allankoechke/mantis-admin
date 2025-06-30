@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Table, Eye, Edit, Trash2, MoreHorizontal, RefreshCw, Plus, ExternalLink } from "lucide-react"
+import { Search, Table, Eye, Trash2, MoreHorizontal, RefreshCw, Plus, ExternalLink, FileText } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -12,6 +12,7 @@ import type { ApiClient, TableMetadata } from "@/lib/api"
 import { AddTableDialog } from "./add-table-dialog"
 import { TableDetailView } from "./table-detail-view"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { TableDocsDrawer } from "./table-docs-drawer"
 import { useRouter } from "@/lib/router"
 
 interface DatabaseSectionProps {
@@ -25,6 +26,7 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   const [editingTable, setEditingTable] = React.useState<TableMetadata | null>(null)
   const [searchExpanded, setSearchExpanded] = React.useState(false)
   const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const [docsOpen, setDocsOpen] = React.useState(false)
   const { route, navigate } = useRouter()
 
   // Check if we're viewing a specific table - safer parsing
@@ -122,6 +124,10 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setDocsOpen(true)}>
+            <FileText className="h-4 w-4 mr-2" />
+            Table API Docs
+          </Button>
           <AddTableDialog apiClient={apiClient} onTablesUpdate={onTablesUpdate} />
         </div>
       </div>
@@ -141,11 +147,9 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
                   Create Table
                 </Button>
               </AddTableDialog>
-              <Button variant="outline" asChild>
-                <a href="https://docs.example.com/tables" target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  View Documentation
-                </a>
+              <Button variant="outline" onClick={() => setDocsOpen(true)}>
+                <ExternalLink className="h-4 w-4 mr-2" />
+                View Documentation
               </Button>
             </div>
           </CardContent>
@@ -220,6 +224,9 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
           ))}
         </div>
       )}
+
+      {/* Open docs on table CRUD */}
+      <TableDocsDrawer open={docsOpen} onClose={() => setDocsOpen(false)} />
     </div>
   )
 }

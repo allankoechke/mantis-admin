@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { RefreshCw, Cog, FileText, Trash2, Search, Plus, ExternalLink } from "lucide-react"
+import { RefreshCw, Cog, FileText, Trash2, Search, Plus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,10 +11,11 @@ import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import type { ApiClient, TableMetadata } from "@/lib/api"
 import { TableConfigDrawer } from "./table-config-drawer"
-import { TableDocsDrawer } from "./table-docs-drawer"
+import { TableRecordDocsDrawer } from "./table-records-docs-drawer"
 import { EditItemDrawer } from "./edit-item-drawer"
 import { AddItemDrawer } from "./add-item-drawer"
 import { ColumnVisibilityDropdown } from "./column-visibility-dropdown"
+import { useToast } from "@/hooks/use-toast"
 
 interface TableDetailViewProps {
   table: TableMetadata
@@ -40,6 +41,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   const [isDeleting, setIsDeleting] = React.useState(false)
   const [filterTerm, setFilterTerm] = React.useState("")
   const [appliedFilter, setAppliedFilter] = React.useState("")
+  const { toast } = useToast()
 
   React.useEffect(() => {
     loadTableData()
@@ -126,7 +128,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
     try {
       // Delete each selected item individually
       const deletePromises = selectedItems.map((itemId) =>
-        apiClient.call(`/api/v1/tables/${table.name}/${itemId}`, { method: "DELETE" }),
+        apiClient.call(`/api/v1/${table.name}/${itemId}`, { method: "DELETE" }),
       )
 
       await Promise.all(deletePromises)
@@ -134,6 +136,10 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
       // Remove deleted items from table data
       setTableData((prevData) => prevData.filter((item) => !selectedItems.includes(item.id)))
       setSelectedItems([])
+      toast({
+        title: "Record(s) Deleted",
+        description: "Table records have been updated successfully.",
+      })
     } catch (error) {
       console.error("Failed to delete items:", error)
     } finally {
@@ -161,7 +167,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
             <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
           </Button>
           {!isViewType &&
-            <Button onClick={handleAddItem} disabled={isLoading}>
+            <Button size="sm" onClick={handleAddItem} disabled={isLoading}>
               <Plus className="h-4 w-4 mr-2" />
               New Record
             </Button>
@@ -342,7 +348,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
         onTableUpdate={onTableUpdate}
       />
 
-      <TableDocsDrawer table={table} open={docsOpen} onClose={() => setDocsOpen(false)} />
+      <TableRecordDocsDrawer table={table} open={docsOpen} onClose={() => setDocsOpen(false)} />
 
       {addingItem && (
         <AddItemDrawer

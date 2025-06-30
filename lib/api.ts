@@ -51,28 +51,17 @@ export interface Admin {
 }
 
 export interface AppSettings {
+  allowRegistration: boolean
   appName: string
   baseUrl: string
-  version: string
-  maintenanceMode: boolean
-  maxFileSize: string
-  allowRegistration: boolean
   emailVerificationRequired: boolean
-  sessionTimeout: number
+  maintenanceMode: boolean
+  maxFileSize: Number
   mode: AppMode
+  sessionTimeout: Number
+  adminSessionTimeout: Number
+  mantisVersion: string
 }
-
-// const mockSettings = {
-//   appName: "Mantis Admin",
-//   baseUrl: "https://api.example.com",
-//   version: "1.2.3",
-//   maintenanceMode: false,
-//   maxFileSize: "10MB",
-//   allowRegistration: true,
-//   emailVerificationRequired: false,
-//   sessionTimeout: 3600,
-//   mode: "TEST" as AppMode,
-// }
 
 // API Response interface
 interface ApiResponse<T> {
@@ -80,6 +69,13 @@ interface ApiResponse<T> {
   error?: string
   status: number
 }
+
+// utils/getApiBaseUrl.ts
+
+type AppState = {
+  isTest: boolean;
+  userDefinedApiUrl?: string; // from settings window
+};
 
 export class ApiClient {
   private token: string
@@ -89,6 +85,7 @@ export class ApiClient {
   private maxRequests = 100
   private mode: AppMode
   private baseUrl: string
+  private apiUrl: string
 
   constructor(
     token: string,
@@ -104,9 +101,26 @@ export class ApiClient {
     this.baseUrl = baseUrl
   }
 
+  private getApiBaseUrl(appMode: AppMode): string {
+    if (appMode === "TEST") {
+      // For debug mode, or non window sessions, pick port from env
+      const port = process.env.MANTIS_PORT || 7070; // match your server default
+      return `http://localhost:${port}`;
+    }
+
+    if (typeof window !== "undefined") {
+      const { origin } = window.location;
+      console.log("ORIGIN: ", origin)
+      return `${origin}`;
+    } else {
+      const port = process.env.MANTIS_PORT || 7070; // match your server default
+      return `http://localhost:${port}`;
+    }
+  }
+
   private async realApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
-      const url = `${this.baseUrl}${endpoint}`
+      const url = `${this.getApiBaseUrl(this.mode)}${endpoint}`
       const headers = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.token}`,

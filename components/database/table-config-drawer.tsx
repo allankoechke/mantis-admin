@@ -22,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import type { ApiClient, TableMetadata } from "@/lib/api"
 import { dataTypes } from "@/lib/constants"
+import { useToast } from "@/hooks/use-toast"
 
 interface TableConfigDrawerProps {
   table: TableMetadata
@@ -55,6 +56,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false)
   const [systemFieldsCollapsed, setSystemFieldsCollapsed] = React.useState(true)
   const [deletedColumns, setDeletedColumns] = React.useState([]) // Track deleted field names, we'll 
+  const { toast } = useToast()
 
   React.useEffect(() => {
     if (open) {
@@ -76,7 +78,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
     const column = columns[index]
     const isSystemColumn = column.system
 
-    if (!(columns.length > 1 && !isSystemColumn)) 
+    if (!(columns.length > 1 && !isSystemColumn))
       return
     const col_name = column.name
 
@@ -90,7 +92,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
   const isAnExistingField = (index: number) => {
     const col_old_name = columns[index]?.old_name
-    if(!col_old_name) return false;
+    if (!col_old_name) return false;
     for (const f of table.schema.fields) {
       if (f.name === col_old_name) return true;
     }
@@ -125,6 +127,10 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
         body: JSON.stringify({ fields: columns, deletedFields: deletedColumns }),
       })
       onTableUpdate(updatedTable)
+      toast({
+        title: "Table Updated",
+        description: "Table config has been updated successfully.",
+      })
     } catch (error) {
       console.error("Failed to update schema:", error)
     } finally {

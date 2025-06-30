@@ -30,7 +30,6 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
 
   React.useEffect(() => {
     if (settings) {
-      console.log("Settings received:", settings)
       setFormData({ ...settings, mode })
       setHasChanges(false)
     }
@@ -63,7 +62,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
 
     setIsLoading(true)
     try {
-      const updatedSettings = await apiClient.call<AppSettings>("/api/v1/settings", {
+      const updatedSettings = await apiClient.call<AppSettings>("/api/v1/settings/config", {
         method: "PATCH",
         body: JSON.stringify(formData),
       })
@@ -84,7 +83,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
-      const updatedSettings = await apiClient.call<AppSettings>("/api/v1/settings")
+      const updatedSettings = await apiClient.call<AppSettings>("/api/v1/settings/config")
       onSettingsUpdate(updatedSettings)
     } catch (error) {
       console.error("Failed to refresh settings:", error)
@@ -126,72 +125,6 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
         </div>
       </div>
 
-      {/* Environment Mode Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Environment Mode</CardTitle>
-          <CardDescription>Switch between test mode (mock data) and production mode (real API calls)</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card
-              className={`cursor-pointer transition-all ${mode === "TEST" ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
-              onClick={() => handleModeToggle("TEST")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <TestTube className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <h4 className="font-medium">Test Mode</h4>
-                    <p className="text-sm text-muted-foreground">Uses mock data for development</p>
-                  </div>
-                  {mode === "TEST" && (
-                    <Badge variant="default" className="ml-auto">
-                      Active
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card
-              className={`cursor-pointer transition-all ${mode === "PROD" ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
-              onClick={() => handleModeToggle("PROD")}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-green-600" />
-                  <div>
-                    <h4 className="font-medium">Production Mode</h4>
-                    <p className="text-sm text-muted-foreground">Makes real API calls</p>
-                  </div>
-                  {mode === "PROD" && (
-                    <Badge variant="default" className="ml-auto">
-                      Active
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {mode === "PROD" && (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <div className="flex items-start gap-2">
-                <Globe className="h-4 w-4 text-yellow-600 mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Production Mode Active</p>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                    All API calls will be made to the configured base URL. Ensure your API server is running and
-                    accessible.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
       <Card>
         <CardHeader>
           <CardTitle>General Settings</CardTitle>
@@ -211,8 +144,8 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
               <Label htmlFor="version">Version</Label>
               <Input
                 id="version"
-                value={formData?.version || ""}
-                onChange={(e) => handleInputChange("version", e.target.value)}
+                value={formData?.mantisVersion || ""}
+                disabled={true}
               />
             </div>
           </div>
@@ -233,12 +166,13 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="max-file-size">Max File Size</Label>
+              <Label htmlFor="max-file-size">Max File Size (MB)</Label>
               <Input
                 id="max-file-size"
-                value={formData?.maxFileSize || ""}
-                onChange={(e) => handleInputChange("maxFileSize", e.target.value)}
-                placeholder="10MB"
+                type="number"
+                value={formData?.maxFileSize?.toString() || 10}
+                onChange={(e) => handleInputChange("maxFileSize", Number.parseInt(e.target.value) || 10)}
+
               />
             </div>
             <div>
@@ -246,8 +180,17 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
               <Input
                 id="session-timeout"
                 type="number"
-                value={formData?.sessionTimeout || 3600}
-                onChange={(e) => handleInputChange("sessionTimeout", Number.parseInt(e.target.value) || 3600)}
+                value={formData?.sessionTimeout?.toString() || 86400}
+                onChange={(e) => handleInputChange("sessionTimeout", Number.parseInt(e.target.value) || 86400)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="session-timeout">Admin Session Timeout (seconds)</Label>
+              <Input
+                id="admin-session-timeout"
+                type="number"
+                value={formData?.adminSessionTimeout?.toString() || 84000}
+                onChange={(e) => handleInputChange("adminSessionTimeout", Number.parseInt(e.target.value) || 3600)}
               />
             </div>
           </div>
@@ -289,94 +232,72 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
         </CardContent>
       </Card>
 
-      {/* Notification Test Section */}
+      {/* Environment Mode Card */}
       <Card>
         <CardHeader>
-          <CardTitle>Notification Testing</CardTitle>
-          <CardDescription>Test different types of notifications and error messages</CardDescription>
+          <CardTitle>Environment Mode</CardTitle>
+          <CardDescription>Switch between test mode (cors supported) and production mode (real API calls)</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Button
-              variant="default"
-              onClick={() => {
-                toast({
-                  title: "Info",
-                  description: "This is a test info message. Everything is working correctly!",
-                })
-              }}
-              className="w-full"
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card
+              className={`cursor-pointer transition-all ${mode === "TEST" ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
+              onClick={() => handleModeToggle("TEST")}
             >
-              Test Info
-            </Button>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <TestTube className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <h4 className="font-medium">Test Mode</h4>
+                    <p className="text-sm text-muted-foreground">Uses UI dev server for development</p>
+                  </div>
+                  {mode === "TEST" && (
+                    <Badge variant="default" className="ml-auto">
+                      Active
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
 
-            <Button
-              variant="secondary"
-              onClick={() => {
-                toast({
-                  title: "Warning",
-                  description: "This is a test warning message. Please pay attention to this.",
-                  variant: "default",
-                })
-              }}
-              className="w-full"
+            <Card
+              className={`cursor-pointer transition-all ${mode === "PROD" ? "ring-2 ring-primary" : "hover:bg-muted/50"}`}
+              onClick={() => handleModeToggle("PROD")}
             >
-              Test Warning
-            </Button>
-
-            <Button
-              variant="destructive"
-              onClick={() => {
-                toast({
-                  variant: "destructive",
-                  title: "Error",
-                  description: "This is a test error message. Something went wrong!",
-                })
-              }}
-              className="w-full"
-            >
-              Test Error
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={() => {
-                toast({
-                  variant: "destructive",
-                  title: "Authentication Error",
-                  description: "Your session has expired. Please log in again.",
-                  action: (
-                    <Button variant="outline" size="sm">
-                      Login
-                    </Button>
-                  ),
-                })
-              }}
-              className="w-full"
-            >
-              Test Auth Toast
-            </Button>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-green-600" />
+                  <div>
+                    <h4 className="font-medium">Production Mode</h4>
+                    <p className="text-sm text-muted-foreground">API and UI running on same server.</p>
+                  </div>
+                  {mode === "PROD" && (
+                    <Badge variant="default" className="ml-auto">
+                      Active
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="mt-4 text-sm text-muted-foreground">
-            <p>Use these buttons to test different notification types:</p>
-            <ul className="list-disc list-inside mt-2 space-y-1">
-              <li>
-                <strong>Info:</strong> General information messages
-              </li>
-              <li>
-                <strong>Warning:</strong> Warning notifications
-              </li>
-              <li>
-                <strong>Error:</strong> Error toast notifications
-              </li>
-              <li>
-                <strong>Auth Error:</strong> Authentication error dialog
-              </li>
-            </ul>
-          </div>
+          {mode === "TEST" && (
+            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Globe className="h-4 w-4 text-yellow-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Testing Mode Active</p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    All API calls will be made to an external API server. Ensure your API server is running and
+                    accessible, and set `MANTIS_PORT` in the env settings.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
+
 
       <div className="flex justify-end gap-2">
         <Button

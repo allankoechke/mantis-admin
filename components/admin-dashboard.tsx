@@ -99,31 +99,30 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   const loadData = async () => {
     // Set default settings if loading fails
     setSettings({
-      appName: "Mantis Admin",
+      appName: "ACME Mantis Project",
       baseUrl: "http://127.0.0.1:7070",
-      version: "1.2.3",
+      mantisVersion: "0.0.0",
       maintenanceMode: false,
-      maxFileSize: "10MB",
+      maxFileSize: 10,
       allowRegistration: true,
       emailVerificationRequired: false,
-      sessionTimeout: 3600,
+      sessionTimeout: 84000,
+      adminSessionTimeout: 3600,
       mode: mode,
     })
 
     try {
       setLoading(true)
 
-      const [tablesData, adminsData/*, settingsData*/] = await Promise.all([
+      const [tablesData, adminsData, settingsData] = await Promise.all([
         apiClient.call<TableMetadata[]>("/api/v1/tables"),
         apiClient.call<Admin[]>("/api/v1/admins"),
-        // apiClient.call<AppSettings>("/api/v1/settings"),
+        apiClient.call<AppSettings>("/api/v1/settings/config"),
       ])
-
-      console.log("Data loaded:", { tablesData, adminsData/*, settingsData */ })
 
       setTables(tablesData)
       setAdmins(adminsData)
-      // setSettings(settingsData)
+      setSettings(settingsData)
     } catch (error) {
       console.error("Failed to load data:", error)
     } finally {
@@ -171,18 +170,18 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
       id: "admins",
       path: "/admins",
     },
-    {
-      title: "Logs",
-      icon: FileText,
-      id: "logs",
-      path: "/logs",
-    },
-    {
-      title: "Sync",
-      icon: RefreshCw,
-      id: "sync",
-      path: "/sync",
-    },
+    // {
+    //   title: "Logs",
+    //   icon: FileText,
+    //   id: "logs",
+    //   path: "/logs",
+    // },
+    // {
+    //   title: "Sync",
+    //   icon: RefreshCw,
+    //   id: "sync",
+    //   path: "/sync",
+    // },
     {
       title: "Settings",
       icon: Settings,
@@ -256,12 +255,15 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
             <SidebarMenu>
               {settings && (
                 <SidebarMenuItem>
-                  <div className="px-4 py-2 text-xs text-muted-foreground">Version {settings.version}</div>
+                  <div className="px-4 py-1 text-xs text-muted-foreground">Mantis Version {settings.mantisVersion}</div>
                 </SidebarMenuItem>
               )}
               <SidebarMenuItem>
+                <div className="px-4 py-1 text-xs text-muted-foreground">Mantis Admin Version {process.env.MANTIS_ADMIN_VERSION}</div>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="https://docs.example.com" target="_blank" rel="noopener noreferrer">
+                  <a href="https://github.com/allankoechke/mantis" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />
                     <span>Documentation</span>
                   </a>

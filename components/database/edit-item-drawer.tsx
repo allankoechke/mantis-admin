@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/drawer"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { ApiClient, TableMetadata } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 interface EditItemDrawerProps {
   table: TableMetadata
@@ -31,6 +32,7 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
   const [isLoading, setIsLoading] = React.useState(false)
   const [isViewType, setIsViewIsViewType] = React.useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = React.useState(false)
+  const { toast } = useToast()
 
   React.useEffect(() => {
     if (open && item) {
@@ -49,6 +51,10 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
       })
       onItemUpdate(updatedItem)
       onClose()
+      toast({
+        title: "Table Updated",
+        description: "Table data has been updated successfully.",
+      })
     } catch (error) {
       console.error("Failed to update item:", error)
     } finally {

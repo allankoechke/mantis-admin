@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { ApiClient, TableMetadata, TableField } from "@/lib/api"
 import { dataTypes } from "@/lib/constants"
+import { useToast } from "@/hooks/use-toast"
 
 interface AddTableDialogProps {
   apiClient: ApiClient
@@ -44,11 +45,12 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
   const [sqlQuery, setSqlQuery] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
   const [open, setOpen] = React.useState(false)
+  const { toast } = useToast()
 
   // When we open the dialog, reset all input values to default
   // that way, we ensure we dont start with previous dialog data
   React.useEffect(() => {
-    if(open) {
+    if (open) {
       // Reset all input fields to default values ...
       setTableName("");
       setSqlQuery("");
@@ -159,6 +161,10 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
       setTableName("")
       setSqlQuery("")
       setOpen(false)
+      toast({
+        title: "Table Created",
+        description: `The table '${tableData.name}' been updated successfully.`,
+      })
     } catch (error) {
       console.error("Failed to create table:", error)
     } finally {
@@ -170,7 +176,7 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {children || (
-          <Button>
+          <Button size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Add Table
           </Button>
