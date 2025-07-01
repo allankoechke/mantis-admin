@@ -76,6 +76,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
     try {
       setAuthErrorReason(reason)  // Set the auth error string
       setAuthErrorDialog(true)    // Set the auth dialog to open
+      handleLogout()
     } catch (error) {
       console.warn("Failed to handle unauthorized:", error)
     }

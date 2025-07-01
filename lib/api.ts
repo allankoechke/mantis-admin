@@ -1,6 +1,7 @@
 "use client"
 
 import type { AppMode } from "./app-state"
+import { useRouter } from "@/lib/router"
 
 // Updated interfaces to match the API response format
 export interface TableField {
