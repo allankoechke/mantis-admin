@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { ApiClient, Admin } from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 
 interface ChangePasswordDialogProps {
   admin: Admin
@@ -20,6 +21,7 @@ export function ChangePasswordDialog({ admin, apiClient, onClose }: ChangePasswo
   const [confirmPassword, setConfirmPassword] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState("")
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,6 +43,12 @@ export function ChangePasswordDialog({ admin, apiClient, onClose }: ChangePasswo
         body: JSON.stringify({ password: newPassword }),
       })
       onClose()
+      
+      toast({
+        variant: "default",
+        title: "Admin Updated",
+        description: "Admin account password updated successfully!",
+      })
     } catch (error) {
       setError("Failed to change password")
     } finally {

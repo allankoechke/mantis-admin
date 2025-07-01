@@ -71,13 +71,6 @@ interface ApiResponse<T> {
   status: number
 }
 
-// utils/getApiBaseUrl.ts
-
-type AppState = {
-  isTest: boolean;
-  userDefinedApiUrl?: string; // from settings window
-};
-
 export class ApiClient {
   private token: string
   private onUnauthorized: (error: string) => void
@@ -86,7 +79,6 @@ export class ApiClient {
   private maxRequests = 100
   private mode: AppMode
   private baseUrl: string
-  private apiUrl: string
 
   constructor(
     token: string,

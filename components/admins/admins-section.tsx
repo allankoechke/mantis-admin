@@ -12,6 +12,7 @@ import type { ApiClient, Admin, TableMetadata } from "@/lib/api"
 import { ChangePasswordDialog } from "./change-password-dialog"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { AddItemDrawer } from "../database/add-item-drawer"
+import { useToast } from "@/hooks/use-toast"
 
 interface AdminsSectionProps {
   admins: Admin[]
@@ -23,6 +24,7 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
   const [selectedAdmin, setSelectedAdmin] = React.useState<Admin | null>(null)
   const [addingAdmin, setAddingAdmin] = React.useState(false)
   const [isLoading, setIsLoading] = React.useState(false)
+  const { toast } = useToast()
 
   const table: any = {
     has_api: true,
@@ -105,6 +107,12 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
       await apiClient.call(`/api/v1/admins/${adminId}`, { method: "DELETE" })
       const updatedAdmins = await apiClient.call<Admin[]>("/api/v1/admins")
       onAdminsUpdate(updatedAdmins)
+
+      toast({
+        variant: "default",
+        title: "Admin Deleted",
+        description: "Admin account deleted successfully!",
+      })
     } catch (error) {
       console.error("Failed to delete admin:", error)
     }
@@ -112,9 +120,15 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
 
   const handleAdminAdded = (admin: Admin) => {
     onAdminsUpdate([...admins, admin])
+
+    toast({
+      variant: "default",
+      title: "Admin Added",
+      description: "Admin account added successfully!",
+    })
   }
 
-  const handleReload = async () =>  {
+  const handleReload = async () => {
     try {
       setIsLoading(true)
       const updatedAdmins = await apiClient.call<Admin[]>("/api/v1/admins")
@@ -137,15 +151,15 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
           </div>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleReload} disabled={isLoading}>
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-            </Button>
+          <Button variant="outline" size="sm" onClick={handleReload} disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+          </Button>
 
-            <Button size="sm" onClick={() => setAddingAdmin(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Record
-            </Button>
-          </div>
+          <Button size="sm" onClick={() => setAddingAdmin(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Record
+          </Button>
+        </div>
       </div>
 
       <Card>

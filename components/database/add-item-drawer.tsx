@@ -53,6 +53,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
       })
       onItemAdded(createdItem)
       onClose()
+      
       toast({
         title: "Table Created",
         description: `A table ${table.name} has been created successfully.`,

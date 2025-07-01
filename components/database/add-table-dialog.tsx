@@ -161,6 +161,7 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
       setTableName("")
       setSqlQuery("")
       setOpen(false)
+      
       toast({
         title: "Table Created",
         description: `The table '${tableData.name}' been updated successfully.`,

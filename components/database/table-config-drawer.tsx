@@ -129,7 +129,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
       onTableUpdate(updatedTable)
       toast({
         title: "Table Updated",
-        description: "Table config has been updated successfully.",
+        description: "Table fields updated successfully.",
       })
     } catch (error) {
       console.error("Failed to update schema:", error)
@@ -153,6 +153,10 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
         }),
       })
       onTableUpdate(updatedTable)
+      toast({
+        title: "Table Updated",
+        description: "Table access rules updated successfully!",
+      })
     } catch (error) {
       console.error("Failed to update rules:", error)
     } finally {

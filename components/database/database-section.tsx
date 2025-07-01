@@ -14,6 +14,7 @@ import { TableDetailView } from "./table-detail-view"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { TableDocsDrawer } from "./table-docs-drawer"
 import { useRouter } from "@/lib/router"
+import { useToast } from "@/hooks/use-toast"
 
 interface DatabaseSectionProps {
   apiClient: ApiClient
@@ -28,6 +29,7 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   const [isRefreshing, setIsRefreshing] = React.useState(false)
   const [docsOpen, setDocsOpen] = React.useState(false)
   const { route, navigate } = useRouter()
+  const { toast } = useToast()
 
   // Check if we're viewing a specific table - safer parsing
   const getSelectedTableName = () => {
@@ -49,6 +51,11 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
       await apiClient.call(`/api/v1/tables/${tableId}`, { method: "DELETE" })
       const updatedTables = await apiClient.call<TableMetadata[]>("/api/v1/tables")
       onTablesUpdate(updatedTables)
+
+      toast({
+        title: "Table Deleted",
+        description: "Table deleted successfully!",
+      })
     } catch (error) {
       console.error("Failed to delete table:", error)
     }
