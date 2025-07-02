@@ -104,8 +104,16 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
 
   const handleDeleteAdmin = async (adminId: string) => {
     try {
-      await apiClient.call(`/api/v1/admins/${adminId}`, { method: "DELETE" })
+      const res: any = await apiClient.call(`/api/v1/admins/${adminId}`, { method: "DELETE" })
+
+      // If the request failed, throw the error here 
+      if (res?.error?.length > 0) throw res.error
+
       const updatedAdmins = await apiClient.call<Admin[]>("/api/v1/admins")
+
+      // If the request failed, throw the error here 
+      if (updatedAdmins?.error?.length > 0) throw updatedAdmins.error
+
       onAdminsUpdate(updatedAdmins)
 
       toast({

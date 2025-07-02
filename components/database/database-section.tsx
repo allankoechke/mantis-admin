@@ -48,8 +48,18 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
 
   const handleDeleteTable = async (tableId: string) => {
     try {
-      await apiClient.call(`/api/v1/tables/${tableId}`, { method: "DELETE" })
+      const res: any = await apiClient.call(`/api/v1/tables/${tableId}`, { method: "DELETE" })
+
+      // If the request failed, throw the error here 
+      if (res?.error?.length > 0) throw res.error
+
+      // Fetch new tables
       const updatedTables = await apiClient.call<TableMetadata[]>("/api/v1/tables")
+
+      // If the request failed, throw the error here 
+      if (updatedTables?.error?.length > 0) throw updatedTables.error
+
+      // Set the new tables
       onTablesUpdate(updatedTables)
 
       toast({
@@ -73,6 +83,10 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
     setIsRefreshing(true)
     try {
       const updatedTables = await apiClient.call<TableMetadata[]>("/api/v1/tables")
+
+      // If the request failed, throw the error here 
+      if (updatedTables?.error?.length > 0) throw updatedTables.error
+
       onTablesUpdate(updatedTables)
     } catch (error) {
       console.error("Failed to refresh tables:", error)

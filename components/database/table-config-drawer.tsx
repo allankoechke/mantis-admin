@@ -126,6 +126,10 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
         method: "PATCH",
         body: JSON.stringify({ fields: columns, deletedFields: deletedColumns }),
       })
+
+      // If the request failed, throw the error here 
+      if (updatedTable?.error?.length > 0) throw updatedTable.error
+
       onTableUpdate(updatedTable)
       toast({
         title: "Table Updated",
@@ -152,6 +156,10 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
           deleteRule: rules.deleteRule,
         }),
       })
+
+      // If the request failed, throw the error here 
+      if (updatedTable?.error?.length > 0) throw updatedTable.error
+
       onTableUpdate(updatedTable)
       toast({
         title: "Table Updated",

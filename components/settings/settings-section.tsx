@@ -66,6 +66,10 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
         method: "PATCH",
         body: JSON.stringify(formData),
       })
+
+      // If the request failed, throw the error here 
+      if (updatedSettings?.error?.length > 0) throw updatedSettings.error
+
       onSettingsUpdate(updatedSettings)
       setHasChanges(false)
 
@@ -84,6 +88,10 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
     setIsRefreshing(true)
     try {
       const updatedSettings = await apiClient.call<AppSettings>("/api/v1/settings/config")
+
+      // If the request failed, throw the error here 
+      if (updatedSettings?.error?.length > 0) throw updatedSettings.error
+
       onSettingsUpdate(updatedSettings)
     } catch (error) {
       console.error("Failed to refresh settings:", error)

@@ -38,12 +38,16 @@ export function ChangePasswordDialog({ admin, apiClient, onClose }: ChangePasswo
     setError("")
 
     try {
-      await apiClient.call(`/api/v1/admins/${admin.id}`, {
+      const res: any = await apiClient.call(`/api/v1/admins/${admin.id}`, {
         method: "PATCH",
         body: JSON.stringify({ password: newPassword }),
       })
+
+      // If the request failed, throw the error here 
+      if (res?.error?.length > 0) throw res.error
+
       onClose()
-      
+
       toast({
         variant: "default",
         title: "Admin Updated",

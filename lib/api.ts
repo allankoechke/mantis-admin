@@ -1,7 +1,7 @@
 "use client"
 
 import type { AppMode } from "./app-state"
-import { useRouter } from "@/lib/router"
+
 
 // Updated interfaces to match the API response format
 export interface TableField {
@@ -51,6 +51,24 @@ export interface Admin {
   updated: string
 }
 
+export function getApiBaseUrl(): string {
+
+  const mode = process?.env?.NODE_ENV || "production";
+  const port = process?.env?.MANTIS_PORT || 7070;
+
+  if (mode === "development") {
+    // For debug mode, or non window sessions, pick port from env
+    return `http://localhost:${port}`;
+  }
+
+  if (typeof window !== "undefined") {
+    const { origin } = window.location;
+    return `${origin}`;
+  }
+
+  return `http://localhost:${port}`;
+}
+
 export interface AppSettings {
   allowRegistration: boolean
   appName: string
@@ -75,45 +93,20 @@ export class ApiClient {
   private token: string
   private onUnauthorized: (error: string) => void
   private onError?: (error: string, type?: "error" | "warning") => void
-  private requestCount = 0
-  private maxRequests = 100
-  private mode: AppMode
-  private baseUrl: string
 
   constructor(
     token: string,
     onUnauthorized: (reason?: string | "") => void,
-    mode: AppMode = "PROD",
-    baseUrl = "http://127.0.0.1:7070",
     onError?: (error: string, type?: "error" | "warning") => void,
   ) {
     this.token = token
     this.onUnauthorized = onUnauthorized
     this.onError = onError
-    this.mode = mode
-    this.baseUrl = baseUrl
-  }
-
-  private getApiBaseUrl(appMode: AppMode): string {
-    if (appMode === "TEST") {
-      // For debug mode, or non window sessions, pick port from env
-      const port = process.env.MANTIS_PORT || 7070; // match your server default
-      return `http://localhost:${port}`;
-    }
-
-    if (typeof window !== "undefined") {
-      const { origin } = window.location;
-      console.log("ORIGIN: ", origin)
-      return `${origin}`;
-    } else {
-      const port = process.env.MANTIS_PORT || 7070; // match your server default
-      return `http://localhost:${port}`;
-    }
   }
 
   private async realApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
-      const url = `${this.getApiBaseUrl(this.mode)}${endpoint}`
+      const url = `${getApiBaseUrl()}${endpoint}`
       const headers = {
         "Content-Type": "application/json",
         Authorization: `Bearer ${this.token}`,
@@ -169,28 +162,18 @@ export class ApiClient {
         data: null as T,
         error: error.message || "Could not connect to the server!",
         status: 500, // could use 500 if you prefer
-      } as T
-    }
-  }
-
-  // Method to update mode
-  updateMode(mode: AppMode, baseUrl?: string) {
-    this.mode = mode
-    if (baseUrl) {
-      this.baseUrl = baseUrl
+      } as any
     }
   }
 }
 
 export async function loginWithPassword(
   email: string,
-  password: string,
-  mode: AppMode = "PROD",
-  baseUrl = "http://127.0.0.1:7070",
+  password: string
 ) {
   // Real API call
   try {
-    const response = await fetch(`${baseUrl}/api/v1/admins/auth-with-password`, {
+    const response = await fetch(`${getApiBaseUrl()}/api/v1/admins/auth-with-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json", },
       body: JSON.stringify({ email, password }),
@@ -203,7 +186,7 @@ export async function loginWithPassword(
       if (responseData.data) {
         return responseData.data
       }
-      return responseData
+      return responseData.data
     } else {
       throw new Error(responseData.error || responseData.message || "Login failed")
     }

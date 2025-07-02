@@ -49,9 +49,13 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
         method: "PATCH",
         body: JSON.stringify(formData),
       })
+
+      // If the request failed, throw the error here 
+      if (updatedItem?.error?.length > 0) throw updatedItem.error
+
       onItemUpdate(updatedItem)
       onClose()
-      
+
       toast({
         title: "Table Updated",
         description: "Table data has been updated successfully.",

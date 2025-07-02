@@ -148,20 +148,27 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
         )
       }
 
-      await apiClient.call("/api/v1/tables", {
+      const res: any = await apiClient.call("/api/v1/tables", {
         method: "POST",
         body: JSON.stringify(tableData),
       })
 
+      // If the request failed, throw the error here 
+      if (res?.error?.length > 0) throw res.error
+
       // Refresh tables list
       const updatedTables = await apiClient.call<TableMetadata[]>("/api/v1/tables")
+
+      // If the request failed, throw the error here 
+      if (updatedTables?.error?.length > 0) throw updatedTables.error
+
       onTablesUpdate(updatedTables)
 
       // Reset form
       setTableName("")
       setSqlQuery("")
       setOpen(false)
-      
+
       toast({
         title: "Table Created",
         description: `The table '${tableData.name}' been updated successfully.`,
@@ -338,12 +345,12 @@ export function AddTableDialog({ apiClient, onTablesUpdate, children }: AddTable
               </div>
 
               <div className="text-sm text-muted-foreground mt-2">
-                <p>
+                <div>
                   <Badge variant="outline" className="text-xs mr-2">
                     System
                   </Badge>
                   System columns are automatically managed and cannot be modified.
-                </p>
+                </div>
               </div>
             </div>
           )}

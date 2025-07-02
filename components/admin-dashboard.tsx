@@ -83,7 +83,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
   }, [])
 
   const [apiClient, setApiClient] = React.useState(
-    () => new ApiClient(token, handleUnauthorized, mode, settings?.baseUrl, showError),
+    () => new ApiClient(token, handleUnauthorized, showError),
   )
 
   React.useEffect(() => {
@@ -93,9 +93,9 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
 
   // Update API client when mode or settings change
   React.useEffect(() => {
-    const newApiClient = new ApiClient(token, handleUnauthorized, mode, settings?.baseUrl, showError)
+    const newApiClient = new ApiClient(token, handleUnauthorized, showError)
     setApiClient(newApiClient)
-  }, [mode, settings?.baseUrl, token, handleUnauthorized, showError])
+  }, [token, handleUnauthorized, showError])
 
   const loadData = async () => {
     // Set default settings if loading fails

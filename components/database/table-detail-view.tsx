@@ -60,6 +60,10 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
 
     try {
       const tableData = await apiClient.call<any>(`/api/v1/${table.name}`)
+
+      // If the request failed, throw the error here 
+      if (tableData?.error?.length > 0) throw tableData.error
+
       setTableData(tableData)
 
       // setTotalPages(3) // Mock pagination
@@ -136,10 +140,10 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
       // Remove deleted items from table data
       setTableData((prevData) => prevData.filter((item) => !selectedItems.includes(item.id)))
       setSelectedItems([])
-      toast({
-        title: "Record(s) Deleted",
-        description: "Table records have been updated successfully.",
-      })
+      // toast({
+      //   title: "Record(s) Deleted",
+      //   description: "Table records have been updated successfully.",
+      // })
     } catch (error) {
       console.error("Failed to delete items:", error)
     } finally {

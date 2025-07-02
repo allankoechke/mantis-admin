@@ -51,9 +51,13 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
         method: "POST",
         body: JSON.stringify(formData),
       })
+
+      // If the request failed, throw the error here 
+      if (createdItem?.error?.length > 0) throw createdItem.error
+
       onItemAdded(createdItem)
       onClose()
-      
+
       toast({
         title: "Table Created",
         description: `A table ${table.name} has been created successfully.`,
