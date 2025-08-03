@@ -126,7 +126,6 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
         case "uint32":
         case "uint64":
         case "double": {
-          // console.log(`Casting '${value}' to '${Number(value)}'`)
           return Number(value);
         }
 
@@ -199,6 +198,15 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
       default:
         return false
     }
+  }
+
+  function formatDateForInput(value: string | Date | undefined): string {
+    if (!value) return "";
+
+    const date = typeof value === "string" ? new Date(value) : value;
+    if (isNaN(date.getTime())) return "";
+
+    return date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:MM"
   }
 
   return (
@@ -291,7 +299,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
                     <Input
                       id={field.name}
                       type="datetime-local"
-                      value={formData[field.name] || ""}
+                      value={formatDateForInput(formData[field.name])}
                       onChange={(e) => handleFieldChange(field.name, e.target.value)}
                       disabled={(field.type === "view" || isSystemGeneratedField(field))}
                       className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
