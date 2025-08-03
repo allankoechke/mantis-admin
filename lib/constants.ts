@@ -17,7 +17,8 @@ export const dataTypes = [
     "uint32",
     "int64",
     "uint64",
-    "blob",
     "json",
-    "bool"
+    "bool",
+    "file",
+    "files"
 ]

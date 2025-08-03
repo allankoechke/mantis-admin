@@ -186,7 +186,7 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
               </TableRow>
             </TableHeader>
             <TableBody>
-              {admins.map((admin) => (
+              {Array.isArray(admins) && admins.map((admin) => (
                 <TableRow key={admin.id}>
                   <TableCell className="font-medium">{admin.email}</TableCell>
                   <TableCell>{new Date(admin.created).toLocaleDateString()}</TableCell>

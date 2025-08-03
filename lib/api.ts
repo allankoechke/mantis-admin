@@ -107,10 +107,19 @@ export class ApiClient {
   private async realApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
       const url = `${getApiBaseUrl()}${endpoint}`
-      const headers = {
-        "Content-Type": "application/json",
+      // const headers = {
+      //   "Content-Type": "application/json",
+      //   Authorization: `Bearer ${this.token}`,
+      //   ...options.headers,
+      // }
+
+      const headers: Record<string, string> = {
         Authorization: `Bearer ${this.token}`,
-        ...options.headers,
+      };
+
+      // only set content-type if body is not FormData
+      if (!(options.body instanceof FormData)) {
+        headers["Content-Type"] = "application/json";
       }
 
       const response = await fetch(url, {
@@ -152,6 +161,7 @@ export class ApiClient {
 
       // General error handling
       if (response.status >= 400 || response.status <= 0 || response.error) {
+        if(response.error === "Failed to fetch") response.error = `Failed to fetch '${endpoint}'. Could not reach the server!`
         this.onError?.(response.error || "Request failed", "error")
         throw new Error(response.error || "Request failed")
       }

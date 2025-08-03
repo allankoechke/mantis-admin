@@ -44,7 +44,7 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
 
   const selectedTableName = getSelectedTableName()
 
-  const filteredTables = tables?.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  const filteredTables = Array.isArray(tables) ? tables?.filter((table) => table.name.toLowerCase().includes(searchTerm.toLowerCase())) : []
 
   const handleDeleteTable = async (tableId: string) => {
     try {
@@ -96,7 +96,7 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
   }
 
   if (selectedTableName) {
-    const tableInfo = tables.find((t) => t.name === selectedTableName)
+    const tableInfo = Array.isArray(tables) ? tables.find((t) => t.name === selectedTableName) : null
     if (tableInfo) {
       return (
         <TableDetailView

@@ -6,6 +6,7 @@ import { Edit, X, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
 import {
   Drawer,
   DrawerContent,
@@ -44,12 +45,47 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
     }
   }, [open])
 
+  const prepareRequestBody = (data: Record<string, any>, tableFields: TableField[]): FormData | string => {
+    const hasFileField = tableFields.some(f => ["file", "files"].includes(f.type));
+    if (!hasFileField) {
+      return JSON.stringify(data);
+    }
+
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(data)) {
+      const field = tableFields.find(f => f.name === key);
+      if (!field) continue;
+
+      if (field.type === "file") {
+        if (value instanceof File) {
+          formData.append(key, value);
+        }
+      } else if (field.type === "files") {
+        if (Array.isArray(value)) {
+          value.forEach((file, idx) => {
+            if (file instanceof File) {
+              formData.append(key, file);
+            }
+          });
+        }
+      } else {
+        formData.append(key, typeof value === "object" ? JSON.stringify(value) : String(value));
+      }
+    }
+
+    return formData;
+  };
+
+
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
+      const body = prepareRequestBody(formData, tableFields);
+      console.log("Body: ", body)
+
       const createdItem = await apiClient.call<any>(`/api/v1/${table.name}`, {
         method: "POST",
-        body: JSON.stringify(formData),
+        body: body,
       })
 
       // If the request failed, throw the error here 
@@ -69,16 +105,67 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
     }
   }
 
-  const handleFieldChange = (fieldName: string, value: string) => {
+  const cast_to_type = (fieldName: string, value: any): any => {
+    const field = tableFields?.find(f => f.name === fieldName);
+    if (!field) return value;
+
+    const type = field.type;
+
+    try {
+      switch (type) {
+        case "string":
+        case "xml":
+          return String(value);
+
+        case "int8":
+        case "int16":
+        case "int32":
+        case "int64":
+        case "uint8":
+        case "uint16":
+        case "uint32":
+        case "uint64":
+        case "double":
+          return Number(value);
+
+        case "bool":
+          if (typeof value === "boolean") return value;
+          if (typeof value === "string") return value.toLowerCase() === "true";
+          return Boolean(value);
+
+        case "json":
+          return typeof value === "object" ? value : JSON.parse(value);
+
+        case "date": {
+          const date = new Date(value);
+          return isNaN(date.getTime()) ? null : date.toISOString();
+        }
+
+        case "file":
+          return value instanceof File ? value : null;
+
+        case "files":
+          if (Array.isArray(value)) return value;
+          if (value instanceof FileList) return Array.from(value);
+          return [];
+
+        default:
+          return value;
+      }
+    } catch {
+      return value; // fallback on parse errors
+    }
+  };
+
+  const handleFieldChange = (fieldName: string, value: any) => {
     setFormData((prev: any) => ({
       ...prev,
-      [fieldName]: value,
+      [fieldName]: cast_to_type(fieldName, value),
     }))
     setHasUnsavedChanges(true)
   }
 
   const isSystemGeneratedField = (field: any) => {
-    console.log(field.name)
     return field.system && ["id", "created", "updated"].includes(field.name)
   }
 
@@ -90,6 +177,25 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
       }
     } else {
       onClose()
+    }
+  }
+
+  const isIntegralType = (type: string) => {
+    switch(type)
+    {
+      case "int8":
+      case "int16":
+      case "int32":
+      case "int64":
+      case "uint8":
+      case "uint16":
+      case "uint32":
+      case "uint64":
+      case "double":
+        return true
+
+      default:
+        return false
     }
   }
 
@@ -132,19 +238,73 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
                     {field.name}
                     {(field.required || field.system) && <span className="text-red-500 ml-1">*</span>}
                   </Label>
-                  <Input
-                    id={field.name}
-                    type={
-                      field.name === "password"
-                        ? "password"
-                        : field.type === "date" ? "datetime-local" : "text"
-                    }
-                    value={formData[field.name] || ""}
-                    onChange={(e) => handleFieldChange(field.name, e.target.value)}
-                    disabled={(field.type === "view" || isSystemGeneratedField(field))}
-                    className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
-                    placeholder={`Enter ${field.name}`}
-                  />
+                  {field.type === "bool" ? (
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        id={field.name}
+                        checked={!!formData[field.name]}
+                        onCheckedChange={(checked: any) => handleFieldChange(field.name, checked)}
+                        disabled={(field.type === "view" || isSystemGeneratedField(field))}
+                      />
+                      <span>{formData[field.name] ? "True" : "False"}</span>
+                    </div>
+                  ) : field.type === "file" ? (
+                    <Input
+                      id={field.name}
+                      type="file"
+                      onChange={(e) => handleFieldChange(field.name, e.target.files?.[0])}
+                      disabled={(field.type === "view" || isSystemGeneratedField(field))}
+                      className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
+                    />
+                  ) : field.type === "files" ? (
+                    <Input
+                      id={field.name}
+                      type="file"
+                      multiple
+                      onChange={(e) => handleFieldChange(field.name, e.target.files)}
+                      disabled={(field.type === "view" || isSystemGeneratedField(field))}
+                      className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
+                    />
+                  ) : isIntegralType(field.type) ? (
+                    <Input
+                      id={field.name}
+                      type="number"
+                      value={formData[field.name] || ""}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                      disabled={(field.type === "view" || isSystemGeneratedField(field))}
+                      className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
+                      placeholder={`Enter ${field.name}`}
+                    />
+                  ) : field.name === "password" ? (
+                    <Input
+                      id={field.name}
+                      type="password"
+                      value={formData[field.name] || ""}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                      disabled={(field.type === "view" || isSystemGeneratedField(field))}
+                      className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
+                      placeholder={`Enter ${field.name}`}
+                    />
+                  ) : field.type === "date" ? (
+                    <Input
+                      id={field.name}
+                      type="datetime-local"
+                      value={formData[field.name] || ""}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                      disabled={(field.type === "view" || isSystemGeneratedField(field))}
+                      className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
+                    />
+                  ) : (
+                    <Input
+                      id={field.name}
+                      type="text"
+                      value={formData[field.name] || ""}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                      disabled={(field.type === "view" || isSystemGeneratedField(field))}
+                      className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
+                      placeholder={`Enter ${field.name}`}
+                    />
+                  )}
                 </div>
               ))}
 

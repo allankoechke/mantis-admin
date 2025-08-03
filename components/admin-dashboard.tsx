@@ -264,7 +264,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <a href="https://github.com/allankoechke/mantis" target="_blank" rel="noopener noreferrer">
+                  <a href="https://allankoechke.github.io/mantis" target="_blank" rel="noopener noreferrer">
                     <ExternalLink className="h-4 w-4" />
                     <span>Documentation</span>
                   </a>
