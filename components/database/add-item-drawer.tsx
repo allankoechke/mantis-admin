@@ -125,8 +125,10 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
         case "uint16":
         case "uint32":
         case "uint64":
-        case "double":
+        case "double": {
+          // console.log(`Casting '${value}' to '${Number(value)}'`)
           return Number(value);
+        }
 
         case "bool":
           if (typeof value === "boolean") return value;

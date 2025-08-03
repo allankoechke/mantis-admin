@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import type { ApiClient, TableMetadata } from "@/lib/api"
+import { ApiClient, TableMetadata, getApiBaseUrl } from "@/lib/api"
 import { TableConfigDrawer } from "./table-config-drawer"
 import { TableRecordDocsDrawer } from "./table-records-docs-drawer"
 import { EditItemDrawer } from "./edit-item-drawer"
@@ -140,10 +140,6 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
       // Remove deleted items from table data
       setTableData((prevData) => prevData.filter((item) => !selectedItems.includes(item.id)))
       setSelectedItems([])
-      // toast({
-      //   title: "Record(s) Deleted",
-      //   description: "Table records have been updated successfully.",
-      // })
     } catch (error) {
       console.error("Failed to delete items:", error)
     } finally {
@@ -152,6 +148,66 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   }
 
   const filteredFields = table.schema.fields?.filter((field) => visibleColumns.includes(field.name)) || []
+
+  function renderCellContent(field: { name: string; type: string }, value: any) {
+    if (value == null) return "N/A";
+
+    switch (field.type) {
+      case "bool":
+      case "boolean":
+        return value ? "true" : "false";
+
+      case "json":
+        try {
+          return (
+            <pre className="max-w-[300px] whitespace-pre-wrap text-xs bg-muted p-1 rounded">
+              {JSON.stringify(value, null, 2)}
+            </pre>
+          );
+        } catch {
+          return String(value);
+        }
+
+      case "file":
+      case "files": {
+        if(value==="" || value.length === 0) return "N/A";
+
+        const filenames = Array.isArray(value) ? value : [value];
+        return (
+          <div className="flex gap-2 flex-wrap">
+            {filenames.map((filename: string, i: number) => {
+              const url = `${getApiBaseUrl()}/api/files/${table.name}/${encodeURIComponent(filename)}`;
+              const ext = filename.split(".").pop()?.toLowerCase() || "";
+
+              const isImage = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"].includes(ext);
+
+              return isImage ? (
+                <img
+                  key={i}
+                  src={url}
+                  alt={filename}
+                  className="h-10 w-10 object-cover rounded border"
+                />
+              ) : (
+                <a
+                  key={i}
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs underline text-blue-600"
+                >
+                  {filename}
+                </a>
+              );
+            })}
+          </div>
+        );
+      }
+
+      default:
+        return String(value).length===0 ? "N/A" : String(value);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -300,7 +356,9 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
                           />
                         </TableCell>
                         {filteredFields.map((field) => (
-                          <TableCell key={field.name}>{row[field.name] || "-"}</TableCell>
+                          <TableCell key={field.name}>
+                            {renderCellContent(field, row[field.name])}
+                          </TableCell>
                         ))}
                       </TableRow>
                     ))
