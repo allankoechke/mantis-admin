@@ -63,6 +63,7 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
       onTablesUpdate(updatedTables)
 
       toast({
+        variant: "destructive",
         title: "Table Deleted",
         description: "Table deleted successfully!",
       })

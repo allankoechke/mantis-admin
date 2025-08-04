@@ -61,7 +61,7 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
         }
 
         toast({
-          variant: type === "error" ? "destructive" : "default",
+          variant: type === "error" ? "default" : "destructive",
           title: type === "error" ? "Error" : "Warning",
           description: error,
         })

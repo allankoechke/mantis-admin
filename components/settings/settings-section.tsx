@@ -74,6 +74,7 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
       setHasChanges(false)
 
       toast({
+        variant: "destructive",
         title: "Settings Saved",
         description: "Application settings have been updated successfully.",
       })

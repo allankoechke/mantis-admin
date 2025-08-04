@@ -132,6 +132,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
       onTableUpdate(updatedTable)
       toast({
+        variant: "destructive",
         title: "Table Updated",
         description: "Table fields updated successfully.",
       })
@@ -162,6 +163,7 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
       onTableUpdate(updatedTable)
       toast({
+        variant: "destructive",
         title: "Table Updated",
         description: "Table access rules updated successfully!",
       })

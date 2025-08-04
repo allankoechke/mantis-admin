@@ -49,7 +49,7 @@ export function ChangePasswordDialog({ admin, apiClient, onClose }: ChangePasswo
       onClose()
 
       toast({
-        variant: "default",
+        variant: "destructive",
         title: "Admin Updated",
         description: "Admin account password updated successfully!",
       })

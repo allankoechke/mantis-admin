@@ -57,6 +57,7 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
       onClose()
 
       toast({
+        variant: "destructive",
         title: "Table Updated",
         description: "Table data has been updated successfully.",
       })

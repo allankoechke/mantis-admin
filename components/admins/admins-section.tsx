@@ -117,7 +117,7 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
       onAdminsUpdate(updatedAdmins)
 
       toast({
-        variant: "default",
+        variant: "destructive",
         title: "Admin Deleted",
         description: "Admin account deleted successfully!",
       })
@@ -130,7 +130,7 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
     onAdminsUpdate([...admins, admin])
 
     toast({
-      variant: "default",
+      variant: "destructive",
       title: "Admin Added",
       description: "Admin account added successfully!",
     })
