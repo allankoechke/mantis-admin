@@ -74,9 +74,9 @@ export function SettingsSection({ apiClient, settings, onSettingsUpdate, onModeC
       setHasChanges(false)
 
       toast({
-        variant: "destructive",
         title: "Settings Saved",
         description: "Application settings have been updated successfully.",
+        duration: 3000,
       })
     } catch (error) {
       console.error("Failed to update settings:", error)

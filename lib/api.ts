@@ -107,12 +107,6 @@ export class ApiClient {
   private async realApiCall<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
       const url = `${getApiBaseUrl()}${endpoint}`
-      // const headers = {
-      //   "Content-Type": "application/json",
-      //   Authorization: `Bearer ${this.token}`,
-      //   ...options.headers,
-      // }
-
       const headers: Record<string, string> = {
         Authorization: `Bearer ${this.token}`,
       };

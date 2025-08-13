@@ -57,9 +57,9 @@ export function EditItemDrawer({ table, item, apiClient, open, onClose, onItemUp
       onClose()
 
       toast({
-        variant: "destructive",
         title: "Table Updated",
         description: "Table data has been updated successfully.",
+        duration: 3000,
       })
     } catch (error) {
       console.error("Failed to update item:", error)

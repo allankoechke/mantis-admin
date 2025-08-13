@@ -95,9 +95,9 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
       onClose()
 
       toast({
-        variant: "destructive",
-        title: "Table Created",
-        description: `A table ${table.name} has been created successfully.`,
+        title: "Table Record Created",
+        description: `The record was created successfully.`,
+        duration: 3000,
       })
     } catch (error) {
       console.error("Failed to update item:", error)

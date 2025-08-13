@@ -132,9 +132,9 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
       onTableUpdate(updatedTable)
       toast({
-        variant: "destructive",
         title: "Table Updated",
         description: "Table fields updated successfully.",
+        duration: 3000,
       })
     } catch (error) {
       console.error("Failed to update schema:", error)
@@ -163,9 +163,9 @@ export function TableConfigDrawer({ table, apiClient, open, onClose, onTableUpda
 
       onTableUpdate(updatedTable)
       toast({
-        variant: "destructive",
         title: "Table Updated",
         description: "Table access rules updated successfully!",
+        duration: 3000,
       })
     } catch (error) {
       console.error("Failed to update rules:", error)

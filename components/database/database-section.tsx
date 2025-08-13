@@ -63,9 +63,9 @@ export function DatabaseSection({ apiClient, tables, onTablesUpdate }: DatabaseS
       onTablesUpdate(updatedTables)
 
       toast({
-        variant: "destructive",
         title: "Table Deleted",
         description: "Table deleted successfully!",
+        duration: 3000,
       })
     } catch (error) {
       console.error("Failed to delete table:", error)

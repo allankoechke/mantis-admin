@@ -61,9 +61,10 @@ export function AdminDashboard({ token, onLogout }: AdminDashboardProps) {
         }
 
         toast({
-          variant: type === "error" ? "default" : "destructive",
+          variant: type === "error" ? "destructive" : "default",
           title: type === "error" ? "Error" : "Warning",
           description: error,
+          duration: 10000,
         })
       } catch (toastError) {
         console.warn("Failed to show error toast:", toastError)

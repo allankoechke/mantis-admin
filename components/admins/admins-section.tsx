@@ -117,9 +117,9 @@ export function AdminsSection({ admins, apiClient, onAdminsUpdate }: AdminsSecti
       onAdminsUpdate(updatedAdmins)
 
       toast({
-        variant: "destructive",
         title: "Admin Deleted",
         description: "Admin account deleted successfully!",
+        duration: 3000,
       })
     } catch (error) {
       console.error("Failed to delete admin:", error)

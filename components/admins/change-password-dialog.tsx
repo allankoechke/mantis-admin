@@ -49,9 +49,9 @@ export function ChangePasswordDialog({ admin, apiClient, onClose }: ChangePasswo
       onClose()
 
       toast({
-        variant: "destructive",
         title: "Admin Updated",
         description: "Admin account password updated successfully!",
+        duration: 3000,
       })
     } catch (error) {
       setError("Failed to change password")
