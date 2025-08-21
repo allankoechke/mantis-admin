@@ -150,7 +150,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
   const filteredFields = table.schema.fields?.filter((field) => visibleColumns.includes(field.name)) || []
 
   function renderCellContent(field: { name: string; type: string }, value: any) {
-    if (value == null) return "N/A";
+    if (value === null) return "N/A";
 
     switch (field.type) {
       case "bool":
@@ -205,7 +205,7 @@ export function TableDetailView({ table, onBack, apiClient, onTableUpdate }: Tab
       }
 
       default:
-        return String(value).length===0 ? "N/A" : String(value);
+        return value ? String(value) : "N/A";
     }
   }
 

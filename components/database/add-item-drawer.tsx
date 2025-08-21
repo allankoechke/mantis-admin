@@ -76,7 +76,6 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
     return formData;
   };
 
-
   const handleSubmit = async () => {
     setIsLoading(true)
     try {
@@ -100,14 +99,14 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
         duration: 3000,
       })
     } catch (error) {
-      console.error("Failed to update item:", error)
+      console.error("Failed to create item:", error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const cast_to_type = (fieldName: string, value: any): any => {
-    const field = tableFields?.find(f => f.name === fieldName);
+  const castToType = (fieldName: string, value: any): any => {
+    const field = tableFields?.find((f: any) => f.name === fieldName);
     if (!field) return value;
 
     const type = field.type;
@@ -162,7 +161,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
   const handleFieldChange = (fieldName: string, value: any) => {
     setFormData((prev: any) => ({
       ...prev,
-      [fieldName]: cast_to_type(fieldName, value),
+      [fieldName]: castToType(fieldName, value),
     }))
     setHasUnsavedChanges(true)
   }
@@ -183,8 +182,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
   }
 
   const isIntegralType = (type: string) => {
-    switch(type)
-    {
+    switch (type) {
       case "int8":
       case "int16":
       case "int32":
@@ -284,7 +282,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
                       onChange={(e) => handleFieldChange(field.name, e.target.value)}
                       disabled={(field.type === "view" || isSystemGeneratedField(field))}
                       className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
-                      placeholder={`Enter ${field.name}`}
+                      placeholder={`Enter '${field.name}' value`}
                     />
                   ) : field.name === "password" ? (
                     <Input
@@ -294,7 +292,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
                       onChange={(e) => handleFieldChange(field.name, e.target.value)}
                       disabled={(field.type === "view" || isSystemGeneratedField(field))}
                       className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
-                      placeholder={`Enter ${field.name}`}
+                      placeholder={`Enter '${field.name}' value`}
                     />
                   ) : field.type === "date" ? (
                     <Input
@@ -317,7 +315,7 @@ export function AddItemDrawer({ table, apiClient, open, onClose, onItemAdded }: 
                       onChange={(e) => handleFieldChange(field.name, e.target.value)}
                       disabled={(field.type === "view" || isSystemGeneratedField(field))}
                       className={`w-full ${(field.type === "view" || isSystemGeneratedField(field)) ? "bg-muted" : ""}`}
-                      placeholder={`Enter ${field.name}`}
+                      placeholder={`Enter '${field.name}' value`}
                     />
                   )}
                 </div>
